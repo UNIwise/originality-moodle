@@ -21,6 +21,7 @@
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
+$string['pluginname'] = 'Wiseflow Originality plagiarism plugin';
 $string['studentdisclosuredefault']  ='All files uploaded will be submitted to a plagiarism detection service';
 $string['studentdisclosure'] = 'Student Disclosure';
 $string['studentdisclosure_help'] = 'This text will be displayed to all students on the file upload page.';
@@ -28,3 +29,20 @@ $string['originalityexplain'] = 'For more information on this plugin see: ';
 $string['originality'] = 'originality template plagiarism plugin';
 $string['useoriginality'] ='Enable originality';
 $string['savedconfigsuccess'] = 'Plagiarism Settings Saved';
+$string['originality_enable'] = 'Enable Originality for this activity';
+$string['apisettings'] = 'API connection settings';
+$string['apiurl'] = 'API endpoint URL';
+$string['apiurl_help'] = 'The base URL of the plagiarism service API (e.g. http://localhost:8888). Token and document endpoints are derived automatically.';
+$string['clientid'] = 'Client ID';
+$string['clientid_help'] = 'The OAuth2 client ID provided by the plagiarism service.';
+$string['clientsecret'] = 'Client secret';
+$string['clientsecret_help'] = 'The OAuth2 client secret provided by the plagiarism service.';
+$string['status_pending'] = 'Pending';
+$string['status_submitted'] = 'Submitted';
+$string['status_complete'] = 'Complete';
+$string['status_error'] = 'Error';
+$string['similarity'] = 'Similarity: {$a}%';
+$string['viewreport'] = 'View full report';
+$string['submittask'] = 'Submit files to plagiarism service';
+$string['apierror'] = 'Originality API error: {$a}';
+$string['missingconfig'] = 'Originality plugin is not fully configured. Please set API URL, client ID and secret.';

@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
-pl * plagiarism.php - allows the admin to configure plagiarism stuff
+ * plagiarism.php - allows the admin to configure plagiarism stuff
  *
  * @package   plagiarism_turnitin
  * @author    Dan Marsden <dan@danmarsden.com>
@@ -32,16 +32,17 @@ pl * plagiarism.php - allows the admin to configure plagiarism stuff
     require_login();
     admin_externalpage_setup('plagiarismoriginality');
 
-    $context = get_context_instance(CONTEXT_SYSTEM);
-
+    // $context = get_context_instance(CONTEXT_SYSTEM);
+    $context = context_system::instance();
     require_capability('moodle/site:config', $context, $USER->id, true, "nopermissions");
 
     require_once('plagiarism_form.php');
-    $mform = originality plagiarism_setup_form();
-    $plagiarismplugin = originality plagiarism_plugin_originality();
+    $mform = new plagiarism_setup_form();
+    $plagiarismplugin = new plagiarism_plugin_originality();
+    $settingspage = new moodle_url('/plagiarism/originality/settings.php');
 
     if ($mform->is_cancelled()) {
-        redirect('');
+        redirect(new moodle_url('/admin/category.php', array('category'=>'plagiarism')));
     }
 
     echo $OUTPUT->header();
@@ -50,27 +51,16 @@ pl * plagiarism.php - allows the admin to configure plagiarism stuff
         if (!isset($data->originality_use)) {
             $data->originality_use = 0;
         }
-        foreach ($data as $field=>$value) {
-            if (strpos($field, 'originality')===0) {
-                if ($tiiconfigfield = $DB->get_record('config_plugins', array('name'=>$field, 'plugin'=>'plagiarism'))) {
-                    $tiiconfigfield->value = $value;
-                    if (! $DB->update_record('config_plugins', $tiiconfigfield)) {
-                        error("errorupdating");
-                    }
-                } else {
-                    $tiiconfigfield = originality stdClass();
-                    $tiiconfigfield->value = $value;
-                    $tiiconfigfield->plugin = 'plagiarism';
-                    $tiiconfigfield->name = $field;
-                    if (! $DB->insert_record('config_plugins', $tiiconfigfield)) {
-                        error("errorinserting");
-                    }
-                }
+        foreach ($data as $field => $value) {
+            if (strpos($field, 'originality') === 0) {
+                set_config($field, $value, 'plagiarism_originality');
             }
         }
-        notify(get_string('savedconfigsuccess', 'plagiarism_originality'), 'notifysuccess');
+        // Set the 'enabled' key that plagiarism_load_available_plugins() checks for plugin discovery.
+        set_config('enabled', !empty($data->originality_use) ? 1 : 0, 'plagiarism_originality');
+        echo $OUTPUT->notification(get_string('savedconfigsuccess', 'plagiarism_originality'), 'notifysuccess');
     }
-    $plagiarismsettings = (array)get_config('plagiarism');
+    $plagiarismsettings = (array)get_config('plagiarism_originality');
     $mform->set_data($plagiarismsettings);
     
     echo $OUTPUT->box_start('generalbox boxaligncenter', 'intro');

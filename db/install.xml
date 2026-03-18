@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<XMLDB PATH="plagiarism/originality/db" VERSION="20260224"
+    COMMENT="XMLDB file for Moodle originality"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation="../../../lib/xmldb/xmldb.xsd"
+>
+<TABLES>
+    <TABLE NAME="plagiarism_originality_settings" COMMENT="Stores originality settings for modules">
+        <FIELDS>
+            <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true" />
+            <FIELD NAME="cm" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" />
+            <FIELD NAME="enabled" TYPE="int" LENGTH="2" NOTNULL="false" DEFAULT="0" SEQUENCE="false" />
+        </FIELDS>
+        <KEYS>
+            <KEY NAME="primary" TYPE="primary" FIELDS="id" />
+            <KEY NAME="cm" TYPE="foreign-unique" FIELDS="cm" REFTABLE="course_modules" REFFIELDS="id" />
+        </KEYS>
+    </TABLE>
+    <TABLE NAME="plagiarism_originality_files"
+        COMMENT="Table to store originality files sent to external plagiarism service">
+        <FIELDS>
+            <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true" />
+            <FIELD NAME="cm" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" />
+            <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" />
+            <FIELD NAME="identifier" TYPE="char" LENGTH="255" NOTNULL="true" SEQUENCE="false" COMMENT="Moodle file content hash or pathnamehash" />
+            <FIELD NAME="filename" TYPE="char" LENGTH="255" NOTNULL="false" SEQUENCE="false" COMMENT="Original filename for display" />
+            <FIELD NAME="submissiontype" TYPE="char" LENGTH="20" NOTNULL="false" SEQUENCE="false" COMMENT="file or onlinetext" />
+            <FIELD NAME="externalid" TYPE="char" LENGTH="255" NOTNULL="false" SEQUENCE="false" COMMENT="ID returned by external plagiarism service" />
+            <FIELD NAME="reporturl" TYPE="text" NOTNULL="false" SEQUENCE="false" COMMENT="URL to the external plagiarism report" />
+            <FIELD NAME="score" TYPE="int" LENGTH="5" NOTNULL="false" SEQUENCE="false" COMMENT="Similarity score percentage from service" />
+            <FIELD NAME="status" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="0=pending 1=submitted 2=complete 3=error" />
+            <FIELD NAME="attempts" TYPE="int" LENGTH="5" NOTNULL="true" DEFAULT="0" SEQUENCE="false" />
+            <FIELD NAME="errorresponse" TYPE="text" NOTNULL="false" SEQUENCE="false" COMMENT="Error message from external service" />
+            <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" />
+            <FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" />
+        </FIELDS>
+        <KEYS>
+            <KEY NAME="primary" TYPE="primary" FIELDS="id" />
+            <KEY NAME="cm" TYPE="foreign" FIELDS="cm" REFTABLE="course_modules" REFFIELDS="id" />
+            <KEY NAME="userid" TYPE="foreign" FIELDS="userid" REFTABLE="user" REFFIELDS="id" />
+        </KEYS>
+        <INDEXES>
+            <INDEX NAME="cm_userid" UNIQUE="false" FIELDS="cm, userid" />
+        </INDEXES>
+    </TABLE>
+</TABLES>
+</XMLDB>

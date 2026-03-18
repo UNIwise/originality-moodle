@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Event observers for plagiarism_originality.
+ * Scheduled tasks for plagiarism_originality.
  *
  * @package    plagiarism_originality
  * @copyright  2026 onwards
@@ -24,17 +24,14 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-$observers = [
+$tasks = [
     [
-        'eventname' => '\core\event\assessable_uploaded',
-        'callback'  => '\plagiarism_originality\observer::assessable_uploaded',
-    ],
-    [
-        'eventname' => '\core\event\assessable_submitted',
-        'callback'  => '\plagiarism_originality\observer::assessable_submitted',
-    ],
-    [
-        'eventname' => '\mod_assign\event\submission_removed',
-        'callback'  => '\plagiarism_originality\observer::submission_removed',
+        'classname' => '\plagiarism_originality\task\submit_files',
+        'blocking'  => 0,
+        'minute'    => '*/5',
+        'hour'      => '*',
+        'day'       => '*',
+        'month'     => '*',
+        'dayofweek' => '*',
     ],
 ];
