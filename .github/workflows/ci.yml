@@ -36,7 +36,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           path: plugin
-          fetch-depth: 0
+          ref: ${{ github.head_ref || github.ref_name }}
 
       - name: Setup PHP ${{ matrix.php }}
         uses: shivammathur/setup-php@v2
@@ -58,6 +58,7 @@ jobs:
         run: moodle-plugin-ci install --plugin ./plugin --db-type pgsql
         env:
           DB: pgsql
+          MOODLE_BRANCH: ${{ matrix.moodle-branch }}
 
       - name: PHP Lint
         if: ${{ !cancelled() }}
