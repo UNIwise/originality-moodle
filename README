@@ -1,6 +1,150 @@
-README
+Wiseflow Originality Plagiarism Plugin for Moodle
+==================================================
+
+A Moodle plagiarism plugin that integrates with the Wiseflow Originality API to
+automatically check student submissions for plagiarism. Submissions are sent to
+the external service in the background and similarity scores are displayed
+inline alongside each file on grading and submission pages.
+
+
+Requirements
+------------
+
+- Moodle 4.1 or later
+- PHP 8.0 or later
+- Access to a Wiseflow Originality API instance with OAuth2 client credentials
+
+
+Features
 --------
 
-Template for creating a originality Plagiarism plugin
+- Automatic submission of student files and online text to the Originality
+  service via background processing (adhoc tasks with exponential backoff retry).
+- Inline display of similarity scores and report links on grading pages.
+- Per-activity configuration: enable or disable plagiarism checking on
+  individual assignments, forums, workshops, and quizzes.
+- Configurable submission timing: submit on upload or defer until marking.
+- Student report visibility controls at both global and per-activity level.
+- Admin page for monitoring and retrying failed submissions and deletions.
+- Automatic cleanup: when a submission is removed, the corresponding document
+  is deleted from the external service.
 
-- Replace all instances of "originality" with the shortname of your originality plugin
+
+Installation
+------------
+
+1. Copy the `originality` folder into your Moodle installation at:
+
+       <moodle_root>/plagiarism/originality/
+
+2. Log in as a site administrator and visit the notifications page
+   (Site administration > Notifications) to trigger the database upgrade.
+
+3. Alternatively, run the CLI upgrade:
+
+       php admin/cli/upgrade.php
+
+
+Configuration
+-------------
+
+1. Navigate to Site administration > Advanced features and ensure
+   "Enable plagiarism plugins" is checked.
+
+2. Go to Site administration > Plugins > Plagiarism > Wiseflow Originality
+   plagiarism plugin.
+
+3. Check "Enable originality" to activate the plugin.
+
+4. Enter the API connection details:
+
+   - API endpoint URL: The base URL of your Originality API instance
+     (e.g. https://api.stage.wiseflow-originality.net).
+   - Client ID: The OAuth2 client ID provided by the service.
+   - Client secret: The OAuth2 client secret provided by the service.
+
+5. Under "Supported activities", enable the activity types you want to
+   support (Assignments, Forums, Workshops, Quizzes).
+
+6. Optionally configure report visibility and submission timing defaults.
+
+7. Save changes.
+
+
+Usage
+-----
+
+Once configured globally, plagiarism checking can be enabled on individual
+activities:
+
+1. Edit an activity (e.g. an Assignment) and expand the
+   "Wiseflow Originality plagiarism plugin" section.
+
+2. Check "Enable Originality for this activity".
+
+3. Optionally allow students to view their own reports and choose whether
+   submissions are sent on upload or on marking.
+
+4. Save the activity. Student submissions will now be sent to the Originality
+   service automatically according to the chosen timing.
+
+Similarity scores and report links appear next to each submission on the
+grading page. Teachers and managers can always view reports. Students can
+view their own reports only when both the global and per-activity student
+report settings are enabled.
+
+
+Failed Tasks
+------------
+
+If a submission or deletion fails after all retry attempts, it appears on the
+Failed Tasks tab in the plugin settings page. Administrators can retry
+individual tasks or all failed tasks at once from this page.
+
+
+Scheduled Task
+--------------
+
+Similarity scores are fetched live from the API whenever a grading or
+submission page is viewed (batch-fetched per activity and cached for the
+duration of the request). In addition, the plugin registers a scheduled task
+("Submit files to plagiarism service") that runs every 5 minutes to sync
+results into the local database for records that have been submitted but not
+yet completed. This background sync ensures the local status stays up to date
+even when no one is viewing the page. The task can be managed from
+Site administration > Server > Scheduled tasks.
+
+
+Capabilities
+------------
+
+plagiarism/originality:viewreport
+    Allows viewing plagiarism reports for other users' submissions.
+    Granted by default to editing teachers and managers.
+
+plagiarism/originality:manage
+    Allows managing the plagiarism plugin settings.
+
+
+File Structure
+--------------
+
+lib.php                     Main plugin class and callback functions.
+classes/api_client.php      OAuth2 API client for the Originality service.
+classes/observer.php        Event observers for submission events.
+classes/task/               Adhoc and scheduled task classes.
+plagiarism_form.php         Admin settings form definition.
+settings.php                Admin settings page.
+failed_tasks.php            Failed tasks management page.
+report.php                  Report viewer (redirects to external report).
+db/                         Database schema, upgrade steps, capabilities,
+                            event observers, and scheduled task definitions.
+lang/en/                    English language strings.
+version.php                 Plugin version and requirements.
+
+
+License
+-------
+
+This plugin is licensed under the GNU General Public License v3 or later.
+See COPYING.txt or https://www.gnu.org/licenses/gpl-3.0.html for details.

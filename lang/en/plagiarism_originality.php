@@ -15,10 +15,11 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
+ * Language strings for the Wiseflow Originality plagiarism plugin.
  *
- * @package   plagiarism_originality
- * @copyright 1999 onwards Martin Dougiamas  {@link http://moodle.com}
- * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @package    plagiarism_originality
+ * @copyright  2026 onwards
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 $string['pluginname'] = 'Wiseflow Originality plagiarism plugin';
@@ -55,6 +56,11 @@ $string['allow_student_report'] = 'Allow students to view reports';
 $string['allow_student_report_help'] = 'When enabled, teachers can allow students to view their own plagiarism reports on individual activities. This is the global switch — it must be enabled here before it can be turned on per activity.';
 $string['allow_student_report_activity'] = 'Allow students to view their reports';
 $string['allow_student_report_activity_help'] = 'When enabled, students who submitted work in this activity can view their own plagiarism report.';
+$string['timingsettings'] = 'Submission timing';
+$string['submit_on'] = 'Submit to Originality';
+$string['submit_on_help'] = 'Choose when files are sent to the plagiarism service. "On upload" sends immediately when the student submits. "On marking" waits until a teacher grades the submission.';
+$string['submit_on_upload'] = 'On submission upload';
+$string['submit_on_marking'] = 'On student marking';
 $string['activitiessettings'] = 'Supported activities';
 $string['enable_mod_assign'] = 'Enable for Assignments';
 $string['enable_mod_forum'] = 'Enable for Forums';
@@ -81,3 +87,5 @@ $string['failedcol_time'] = 'Last attempt';
 $string['failedcol_action'] = 'Action';
 $string['unknownuser'] = 'Unknown user';
 $string['status_delete_failed'] = 'Delete failed';
+$string['searchbyidorfile'] = 'Search by ID, user ID, CM ID, or filename...';
+$string['clear'] = 'Clear';

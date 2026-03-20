@@ -159,5 +159,34 @@ function xmldb_plagiarism_originality_upgrade($oldversion)
         upgrade_plugin_savepoint(true, 2026032001, 'plagiarism', 'originality');
     }
 
+    if ($oldversion < 2026032002) {
+        // Add submit_on field to plagiarism_originality_settings.
+        $table = new xmldb_table('plagiarism_originality_settings');
+        $field = new xmldb_field('submit_on', XMLDB_TYPE_INTEGER, '2', null, XMLDB_NOTNULL, null, '0', 'student_report');
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+
+        upgrade_plugin_savepoint(true, 2026032002, 'plagiarism', 'originality');
+    }
+
+    if ($oldversion < 2026032003) {
+        $table = new xmldb_table('plagiarism_originality_files');
+
+        // Add index on status for efficient filtering in scheduled tasks and failed_tasks.php.
+        $index = new xmldb_index('status', XMLDB_INDEX_NOTUNIQUE, ['status']);
+        if (!$dbman->index_exists($table, $index)) {
+            $dbman->add_index($table, $index);
+        }
+
+        // Add index on externalid for lookups in polling and deletion.
+        $index = new xmldb_index('externalid', XMLDB_INDEX_NOTUNIQUE, ['externalid']);
+        if (!$dbman->index_exists($table, $index)) {
+            $dbman->add_index($table, $index);
+        }
+
+        upgrade_plugin_savepoint(true, 2026032003, 'plagiarism', 'originality');
+    }
+
     return true;
 }

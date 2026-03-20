@@ -105,7 +105,7 @@ class api_client {
             return $this->accesstoken;
         }
 
-        $tokenurl = $this->apiurl . '/oauth/token';
+        $tokenurl = $this->apiurl . '/v1/oauth/token';
 
         $ch = curl_init();
         curl_setopt_array($ch, [
@@ -126,6 +126,11 @@ class api_client {
         $httpcode = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
         $curlerror = curl_error($ch);
         curl_close($ch);
+
+        if (!empty($curlerror)) {
+            throw new \moodle_exception('apierror', 'plagiarism_originality', '', 'cURL error: ' . $curlerror);
+        }
+
         $data = json_decode($response, true);
 
         if ($httpcode !== 200 || empty($data['access_token'])) {
@@ -154,7 +159,7 @@ class api_client {
      */
     public function submit_file(\stored_file $file, int $cmid, int $userid): array {
         $token = $this->get_access_token();
-        $submiturl = $this->apiurl . '/documents';
+        $submiturl = $this->apiurl . '/v1/documents';
 
         // Resolve course ID from the course module.
         $cm = get_coursemodule_from_id('', $cmid);
@@ -196,6 +201,10 @@ class api_client {
 
         @unlink($tmppath);
 
+        if (!empty($curlerror)) {
+            throw new \moodle_exception('apierror', 'plagiarism_originality', '', 'cURL error: ' . $curlerror);
+        }
+
         $data = json_decode($response, true);
 
         if ($httpcode < 200 || $httpcode >= 300 || $data === null) {
@@ -217,7 +226,7 @@ class api_client {
      */
     public function submit_text(string $content, int $cmid, int $userid): array {
         $token = $this->get_access_token();
-        $submiturl = $this->apiurl . '/documents';
+        $submiturl = $this->apiurl . '/v1/documents';
 
         // Resolve course ID from the course module.
         $cm = get_coursemodule_from_id('', $cmid);
@@ -252,9 +261,14 @@ class api_client {
 
         $response = curl_exec($ch);
         $httpcode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $curlerror = curl_error($ch);
         curl_close($ch);
 
         @unlink($tmppath);
+
+        if (!empty($curlerror)) {
+            throw new \moodle_exception('apierror', 'plagiarism_originality', '', 'cURL error: ' . $curlerror);
+        }
 
         $data = json_decode($response, true);
 
@@ -278,7 +292,7 @@ class api_client {
      */
     public function search_documents(string $contextkey, string $contextvalue): array {
         $token = $this->get_access_token();
-        $searchurl = $this->apiurl . '/documents/search';
+        $searchurl = $this->apiurl . '/v1/documents/search';
 
         $body = json_encode([
             'context' => [
@@ -323,7 +337,7 @@ class api_client {
      */
     public function get_submission_status(string $externalid): array {
         $token = $this->get_access_token();
-        $statusurl = $this->apiurl . '/documents/' . urlencode($externalid);
+        $statusurl = $this->apiurl . '/v1/documents/' . urlencode($externalid);
 
         $ch = curl_init();
         curl_setopt_array($ch, [
@@ -358,7 +372,7 @@ class api_client {
      */
     public function delete_document(string $externalid): void {
         $token = $this->get_access_token();
-        $deleteurl = $this->apiurl . '/documents/' . urlencode($externalid);
+        $deleteurl = $this->apiurl . '/v1/documents/' . urlencode($externalid);
 
         $ch = curl_init();
         curl_setopt_array($ch, [

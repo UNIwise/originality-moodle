@@ -27,12 +27,9 @@ namespace plagiarism_originality\task;
 defined('MOODLE_INTERNAL') || die();
 
 /**
- * Task to retry failed submissions and poll the external service for results.
+ * Scheduled task to poll the external service for submission results.
  */
 class submit_files extends \core\task\scheduled_task {
-
-    /** @var int Maximum number of retry attempts for failed submissions. */
-    private const MAX_ATTEMPTS = 5;
 
     /**
      * Return the name of the task.
@@ -63,78 +60,8 @@ class submit_files extends \core\task\scheduled_task {
             return;
         }
 
-        // 1. Retry failed submissions (status = 3) that haven't exceeded max attempts.
-        $this->retry_failed_submissions($DB, $client);
-
-        // 2. Poll for results on submitted files (status = 1).
+        // Poll for results on submitted files (status = 1).
         $this->poll_submitted_results($DB, $client);
-    }
-
-    /**
-     * Retry submissions that previously failed.
-     *
-     * @param \moodle_database $DB
-     * @param \plagiarism_originality\api_client $client
-     */
-    private function retry_failed_submissions(\moodle_database $DB, \plagiarism_originality\api_client $client): void {
-        global $CFG;
-
-        $records = $DB->get_records_select(
-            'plagiarism_originality_files',
-            'status = :status AND attempts < :maxattempts',
-            ['status' => 3, 'maxattempts' => self::MAX_ATTEMPTS],
-            'timemodified ASC',
-            '*',
-            0,
-            100 // Process in batches.
-        );
-
-        $fs = get_file_storage();
-
-        foreach ($records as $record) {
-            try {
-                if ($record->submissiontype === 'onlinetext') {
-                    // For online text we can't easily re-fetch the content here,
-                    // so we just skip — it will be resubmitted on next student action.
-                    continue;
-                }
-
-                // Find the file by content hash.
-                $files = $DB->get_records('files', [
-                    'contenthash' => $record->identifier,
-                    'component' => 'assignsubmission_file',
-                ], '', '*', 0, 1);
-
-                $filerecord = reset($files);
-                if (!$filerecord) {
-                    mtrace("Originality: Cannot find file with hash {$record->identifier}, skipping.");
-                    continue;
-                }
-
-                $file = $fs->get_file_by_id($filerecord->id);
-                if (!$file || $file->is_directory()) {
-                    continue;
-                }
-
-                $response = $client->submit_file($file, $record->cm, $record->userid);
-
-                $record->externalid = (string) ($response['documentId'] ?? '');
-                $record->status = 1; // Submitted.
-                $record->attempts = $record->attempts + 1;
-                $record->errorresponse = null;
-                $record->timemodified = time();
-                $DB->update_record('plagiarism_originality_files', $record);
-
-                mtrace("Originality: Retried file {$record->id} successfully.");
-            } catch (\Exception $e) {
-                $record->attempts = $record->attempts + 1;
-                $record->errorresponse = $e->getMessage();
-                $record->timemodified = time();
-                $DB->update_record('plagiarism_originality_files', $record);
-
-                mtrace("Originality: Retry failed for file {$record->id}: " . $e->getMessage());
-            }
-        }
     }
 
     /**

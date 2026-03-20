@@ -37,4 +37,8 @@ $observers = [
         'eventname' => '\mod_assign\event\submission_removed',
         'callback'  => '\plagiarism_originality\observer::submission_removed',
     ],
+    [
+        'eventname' => '\mod_assign\event\submission_graded',
+        'callback'  => '\plagiarism_originality\observer::submission_graded',
+    ],
 ];

@@ -18,10 +18,8 @@
 /**
  * lib.php - Contains Plagiarism plugin specific functions called by Modules.
  *
- * @since 2.0
  * @package    plagiarism_originality
- * @subpackage plagiarism
- * @copyright  2010 Dan Marsden http://danmarsden.com
+ * @copyright  2026 onwards
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
@@ -29,13 +27,16 @@ if (!defined('MOODLE_INTERNAL')) {
     die('Direct access to this script is forbidden.');    ///  It must be included from a Moodle page
 }
 
-//get global class
 global $CFG;
 require_once($CFG->dirroot . '/plagiarism/lib.php');
 
-///// Turnitin Class ////////////////////////////////////////////////////
+/**
+ * Plagiarism plugin class for the Wiseflow Originality service.
+ */
 class plagiarism_plugin_originality extends plagiarism_plugin
 {
+    /** @var array Static cache of search results keyed by cmid. */
+    private static $searchcache = [];
     /**
      * hook to allow plagiarism specific information to be displayed beside a submission 
      * @param array  $linkarraycontains all relevant information for the plugin to generate a link
@@ -79,25 +80,29 @@ class plagiarism_plugin_originality extends plagiarism_plugin
         }
 
         // Batch-fetch all document statuses for this course module from the API.
+        // Results are cached per cmid for the duration of the request (avoids N API calls on grading pages).
+        $apidocs = [];
         if (!empty($filerecord->externalid)) {
-            try {
-                $client = \plagiarism_originality\api_client::create();
-                $results = $client->search_documents('moodle_cm_id', (string) $cmid);
-                $apidocs = [];
-                // Index results by document ID for quick lookup.
-                if (is_array($results)) {
-                    // Handle both {documents: [...]} wrapper and plain array.
-                    $documents = $results['documents'] ?? $results;
-                    foreach ($documents as $doc) {
-                        $docid = (string) ($doc['documentId'] ?? $doc['id'] ?? '');
-                        if (!empty($docid)) {
-                            $apidocs[$docid] = $doc;
+            if (!isset(self::$searchcache[$cmid])) {
+                try {
+                    $client = \plagiarism_originality\api_client::create();
+                    $results = $client->search_documents('moodle_cm_id', (string) $cmid);
+                    $indexed = [];
+                    if (is_array($results)) {
+                        $documents = $results['documents'] ?? $results;
+                        foreach ($documents as $doc) {
+                            $docid = (string) ($doc['documentId'] ?? $doc['id'] ?? '');
+                            if (!empty($docid)) {
+                                $indexed[$docid] = $doc;
+                            }
                         }
                     }
+                    self::$searchcache[$cmid] = $indexed;
+                } catch (\Exception $e) {
+                    self::$searchcache[$cmid] = [];
                 }
-            } catch (\Exception $e) {
-                $apidocs = [];
             }
+            $apidocs = self::$searchcache[$cmid];
         }
 
         // Look up this file's document in the search results.
@@ -139,20 +144,15 @@ class plagiarism_plugin_originality extends plagiarism_plugin
             }
             $DB->update_record('plagiarism_originality_files', $update);
 
-            // Display based on API status.
-            // Show report link only if user has viewreport capability OR student report viewing is enabled.
-            $canviewreport = static::can_user_view_report($cmid, $userid);
-            if ($canviewreport) {
+            // Show report link and details only to users with view permission.
+            if (static::can_user_view_report($cmid, $userid)) {
                 $reporturl = new moodle_url('/plagiarism/originality/report.php', ['id' => $filerecord->id]);
-                $output .=
-                    html_writer::empty_tag('br') . html_writer::link(
+                $output .= html_writer::link(
                     $reporturl,
                     get_string('viewreport', 'plagiarism_originality'),
                     ['target' => '_blank', 'class' => 'plagiarism-originality-report']
                 ) . html_writer::empty_tag('br');
-            }
 
-            if ($canviewreport) {
                 $output .= html_writer::tag(
                     'span',
                     get_string('status', 'plagiarism_originality', $apistatus),
@@ -160,7 +160,7 @@ class plagiarism_plugin_originality extends plagiarism_plugin
                 ) . html_writer::empty_tag('br');
 
                 if ($score !== null) {
-                    $output .= ' ' . html_writer::tag(
+                    $output .= html_writer::tag(
                         'span',
                         get_string('similarity', 'plagiarism_originality', $score),
                         ['class' => 'plagiarism-originality-score']
@@ -227,16 +227,19 @@ class plagiarism_plugin_originality extends plagiarism_plugin
         $cmid = $data->coursemodule;
         $enabled = isset($data->originality_enabled) ? (int) $data->originality_enabled : 0;
         $studentreport = isset($data->originality_student_report) ? (int) $data->originality_student_report : 0;
+        $submiton = isset($data->originality_submit_on) ? (int) $data->originality_submit_on : 0;
 
         if ($record = $DB->get_record('plagiarism_originality_settings', ['cm' => $cmid])) {
             $record->enabled = $enabled;
             $record->student_report = $studentreport;
+            $record->submit_on = $submiton;
             $DB->update_record('plagiarism_originality_settings', $record);
         } else {
             $record = new stdClass();
             $record->cm = $cmid;
             $record->enabled = $enabled;
             $record->student_report = $studentreport;
+            $record->submit_on = $submiton;
             $DB->insert_record('plagiarism_originality_settings', $record);
         }
     }
@@ -272,10 +275,23 @@ class plagiarism_plugin_originality extends plagiarism_plugin
             $mform->disabledIf('originality_student_report', 'originality_enabled');
         }
 
+        // Submission timing.
+        $submitonoptions = [
+            0 => get_string('submit_on_upload', 'plagiarism_originality'),
+            1 => get_string('submit_on_marking', 'plagiarism_originality'),
+        ];
+        $mform->addElement('select', 'originality_submit_on', get_string('submit_on', 'plagiarism_originality'), $submitonoptions);
+        $mform->addHelpButton('originality_submit_on', 'submit_on', 'plagiarism_originality');
+        $mform->setDefault('originality_submit_on', (int) ($plagiarismsettings['originality_submit_on'] ?? 0));
+        $mform->disabledIf('originality_submit_on', 'originality_enabled');
+
         if ($cmid && $record = $DB->get_record('plagiarism_originality_settings', ['cm' => $cmid])) {
             $mform->setDefault('originality_enabled', $record->enabled);
             if (isset($record->student_report)) {
                 $mform->setDefault('originality_student_report', $record->student_report);
+            }
+            if (isset($record->submit_on)) {
+                $mform->setDefault('originality_submit_on', $record->submit_on);
             }
         }
     }
@@ -394,54 +410,6 @@ class plagiarism_plugin_originality extends plagiarism_plugin
         return $DB->get_field_sql($sql, ['cmid' => $cmid]) ?: '';
     }
 
-    /**
-     * hook to allow status of submitted files to be updated - called on grading/report pages.
-     *
-     * @param object $course - full Course object
-     * @param object $cm - full cm object
-     */
-    public function update_status($course, $cm)
-    {
-        //called at top of submissions/grading pages - allows printing of admin style links or updating status
-    }
-
-    /**
-     * called by admin/cron.php 
-     *
-     */
-    public function cron()
-    {
-        //do any scheduled task stuff
-    }
-}
-
-function originality_event_file_uploaded($eventdata)
-{
-    $result = true;
-    return $result;
-}
-function originality_event_files_done($eventdata)
-{
-    $result = true;
-    return $result;
-}
-
-function originality_event_mod_created($eventdata)
-{
-    $result = true;
-    return $result;
-}
-
-function originality_event_mod_updated($eventdata)
-{
-    $result = true;
-    return $result;
-}
-
-function originality_event_mod_deleted($eventdata)
-{
-    $result = true;
-    return $result;
 }
 
 /**

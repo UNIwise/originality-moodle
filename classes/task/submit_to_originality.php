@@ -62,21 +62,34 @@ class submit_to_originality extends \core\task\adhoc_task {
             return;
         }
 
+        // For online text we cannot re-fetch content from the event, skip retry.
+        if ($record->submissiontype === 'onlinetext') {
+            mtrace("Originality submit task: record {$recordid} is onlinetext, cannot retry.");
+            return;
+        }
+
         try {
             $client = \plagiarism_originality\api_client::create();
 
-            if ($record->submissiontype === 'onlinetext') {
-                // For online text we cannot re-fetch content, skip retry.
-                mtrace("Originality submit task: record {$recordid} is onlinetext, cannot retry.");
+            // Find the file by content hash using the course module context.
+            $fs = get_file_storage();
+            $cm = get_coursemodule_from_id('', (int) $record->cm);
+            if (!$cm) {
+                mtrace("Originality submit task: course module {$record->cm} not found for record {$recordid}.");
+                return;
+            }
+            $context = \context_module::instance($cm->id, IGNORE_MISSING);
+            if (!$context) {
+                mtrace("Originality submit task: context not found for cm {$record->cm}.");
                 return;
             }
 
-            // Find the file by content hash.
-            $fs = get_file_storage();
-            $files = $DB->get_records('files', [
-                'contenthash' => $record->identifier,
-                'component' => 'assignsubmission_file',
-            ], '', '*', 0, 1);
+            // Search for the file across all areas within this module context.
+            $files = $DB->get_records_select('files',
+                'contenthash = :hash AND contextid = :ctx AND filename != :dot',
+                ['hash' => $record->identifier, 'ctx' => $context->id, 'dot' => '.'],
+                '', '*', 0, 1
+            );
 
             $filerecord = reset($files);
             if (!$filerecord) {

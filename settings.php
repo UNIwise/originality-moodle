@@ -15,28 +15,24 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * plagiarism.php - allows the admin to configure plagiarism stuff
+ * Settings page for the Wiseflow Originality plagiarism plugin.
  *
- * @package   plagiarism_turnitin
- * @author    Dan Marsden <dan@danmarsden.com>
- * @copyright 1999 onwards Martin Dougiamas  {@link http://moodle.com}
- * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @package    plagiarism_originality
+ * @copyright  2026 onwards
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
     require_once(dirname(dirname(__FILE__)) . '/../config.php');
     require_once($CFG->libdir.'/adminlib.php');
-    require_once($CFG->libdir.'/plagiarismlib.php');
     require_once($CFG->dirroot.'/plagiarism/originality/lib.php');
     require_once($CFG->dirroot.'/plagiarism/originality/plagiarism_form.php');
 
     require_login();
     admin_externalpage_setup('plagiarismoriginality');
 
-    // $context = get_context_instance(CONTEXT_SYSTEM);
     $context = context_system::instance();
-    require_capability('moodle/site:config', $context, $USER->id, true, "nopermissions");
+    require_capability('moodle/site:config', $context);
 
-    require_once('plagiarism_form.php');
     $mform = new plagiarism_setup_form();
     $plagiarismplugin = new plagiarism_plugin_originality();
     $settingspage = new moodle_url('/plagiarism/originality/settings.php');

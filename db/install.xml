@@ -11,6 +11,7 @@
             <FIELD NAME="cm" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" />
             <FIELD NAME="enabled" TYPE="int" LENGTH="2" NOTNULL="false" DEFAULT="0" SEQUENCE="false" />
             <FIELD NAME="student_report" TYPE="int" LENGTH="2" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Whether students can view the report for this activity" />
+            <FIELD NAME="submit_on" TYPE="int" LENGTH="2" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="0=on upload, 1=on marking" />
         </FIELDS>
         <KEYS>
             <KEY NAME="primary" TYPE="primary" FIELDS="id" />
@@ -42,6 +43,8 @@
         </KEYS>
         <INDEXES>
             <INDEX NAME="cm_userid" UNIQUE="false" FIELDS="cm, userid" />
+            <INDEX NAME="status" UNIQUE="false" FIELDS="status" />
+            <INDEX NAME="externalid" UNIQUE="false" FIELDS="externalid" />
         </INDEXES>
     </TABLE>
 </TABLES>
