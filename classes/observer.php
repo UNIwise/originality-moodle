@@ -51,6 +51,12 @@ class observer {
 
         $cmid = $event->contextinstanceid;
 
+        // Check if this activity type is enabled in global settings.
+        $modulename = $event->component; // e.g. 'mod_assign'.
+        if (!\plagiarism_plugin_originality::is_module_supported($modulename)) {
+            return;
+        }
+
         // Check if originality is enabled for this activity.
         $modsettings = $DB->get_record('plagiarism_originality_settings', ['cm' => $cmid]);
         if (empty($modsettings) || empty($modsettings->enabled)) {
@@ -94,6 +100,12 @@ class observer {
 
         $cmid = $event->contextinstanceid;
 
+        // Check if this activity type is enabled in global settings.
+        $modulename = $event->component; // e.g. 'mod_assign'.
+        if (!\plagiarism_plugin_originality::is_module_supported($modulename)) {
+            return;
+        }
+
         $modsettings = $DB->get_record('plagiarism_originality_settings', ['cm' => $cmid]);
         if (empty($modsettings) || empty($modsettings->enabled)) {
             return;
@@ -132,12 +144,19 @@ class observer {
     public static function submission_removed(\mod_assign\event\submission_removed $event): void {
         global $DB;
 
+        require_once(__DIR__ . '/../lib.php');
+
         $config = get_config('plagiarism_originality');
         if (empty($config->originality_use)) {
             return;
         }
 
         $cmid = $event->contextinstanceid;
+
+        // Check if this activity type is enabled in global settings.
+        if (!\plagiarism_plugin_originality::is_module_supported('assign')) {
+            return;
+        }
         $userid = $event->relateduserid ?? $event->userid;
 
         // Find all tracked files for this user on this course module.
@@ -150,25 +169,15 @@ class observer {
             return;
         }
 
-        try {
-            $client = \plagiarism_originality\api_client::create();
-        } catch (\Exception $e) {
-            debugging('Originality submission_removed: could not create API client: ' . $e->getMessage(), DEBUG_DEVELOPER);
-            return;
-        }
-
         foreach ($records as $record) {
-            // Delete from external service if we have an external ID.
-            if (!empty($record->externalid)) {
-                try {
-                    $client->delete_document($record->externalid);
-                } catch (\Exception $e) {
-                    debugging('Originality delete failed for externalid ' . $record->externalid
-                        . ': ' . $e->getMessage(), DEBUG_DEVELOPER);
-                }
-            }
-            // Remove the local tracking record.
-            $DB->delete_records('plagiarism_originality_files', ['id' => $record->id]);
+            // Queue an adhoc task to delete from external service with retry.
+            $task = new \plagiarism_originality\task\delete_from_originality();
+            $task->set_custom_data([
+                'external_id' => $record->externalid ?? '',
+                'record_id'   => $record->id,
+                'attempt'     => 1,
+            ]);
+            \core\task\manager::queue_adhoc_task($task);
         }
     }
 }

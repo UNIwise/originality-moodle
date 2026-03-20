@@ -47,9 +47,29 @@
 
     echo $OUTPUT->header();
 
+    // Tab navigation.
+    $settingsurl = new moodle_url('/plagiarism/originality/settings.php');
+    $failedurl = new moodle_url('/plagiarism/originality/failed_tasks.php');
+    $tabs = [
+        new tabobject('settings', $settingsurl, get_string('pluginsettings', 'plagiarism_originality')),
+        new tabobject('failedtasks', $failedurl, get_string('failedtasks', 'plagiarism_originality')),
+    ];
+    echo $OUTPUT->tabtree($tabs, 'settings');
+
     if (($data = $mform->get_data()) && confirm_sesskey()) {
-        if (!isset($data->originality_use)) {
-            $data->originality_use = 0;
+        // Ensure unchecked checkboxes are explicitly saved as 0.
+        $checkboxes = [
+            'originality_use',
+            'originality_mod_assign',
+            'originality_mod_forum',
+            'originality_mod_workshop',
+            'originality_mod_quiz',
+            'originality_student_report',
+        ];
+        foreach ($checkboxes as $cb) {
+            if (!isset($data->$cb)) {
+                $data->$cb = 0;
+            }
         }
         foreach ($data as $field => $value) {
             if (strpos($field, 'originality') === 0) {

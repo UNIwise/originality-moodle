@@ -84,14 +84,24 @@ class api_client {
     /**
      * Obtain an access token using the OAuth2 client-credentials grant.
      *
-     * Tokens are cached in memory for the lifetime of the request until they expire.
+     * Tokens are cached persistently via plugin config and reused across requests
+     * until they expire (with a 30-second safety margin).
      *
      * @return string The bearer access token.
      * @throws \moodle_exception On authentication failure.
      */
     public function get_access_token(): string {
-        // Return cached token if still valid (with 30s safety margin).
+        // Check in-memory cache first.
         if ($this->accesstoken !== null && time() < ($this->tokenexpiry - 30)) {
+            return $this->accesstoken;
+        }
+
+        // Check persistent cache (survives across requests).
+        $cachedtoken = get_config('plagiarism_originality', 'cached_access_token');
+        $cachedexpiry = (int) get_config('plagiarism_originality', 'cached_token_expiry');
+        if (!empty($cachedtoken) && time() < ($cachedexpiry - 30)) {
+            $this->accesstoken = $cachedtoken;
+            $this->tokenexpiry = $cachedexpiry;
             return $this->accesstoken;
         }
 
@@ -118,19 +128,17 @@ class api_client {
         curl_close($ch);
         $data = json_decode($response, true);
 
-        debugging('Originality token request to: ' . $tokenurl
-            . ' | HTTP ' . $httpcode
-            . ' | client_id: ' . substr($this->clientid, 0, 8) . '...'
-            . ' | response: ' . substr($response, 0, 500), DEBUG_DEVELOPER);
-
         if ($httpcode !== 200 || empty($data['access_token'])) {
             $error = $data['error_description'] ?? $data['error'] ?? $data['message'] ?? $response;
-            \core\notification::error('Originality token request FAILED: HTTP ' . $httpcode . ' | ' . $error);
             throw new \moodle_exception('apierror', 'plagiarism_originality', '', $error);
         }
 
         $this->accesstoken = $data['access_token'];
         $this->tokenexpiry = time() + ($data['expires_in'] ?? 3600);
+
+        // Persist token across requests.
+        set_config('cached_access_token', $this->accesstoken, 'plagiarism_originality');
+        set_config('cached_token_expiry', $this->tokenexpiry, 'plagiarism_originality');
 
         return $this->accesstoken;
     }
@@ -181,16 +189,8 @@ class api_client {
             ],
         ]);
 
-        // Log the full request details to frontend.
-        $requestlog = 'Originality submit_file REQUEST: '
-            . 'URL: ' . $submiturl
-            . ' | File: ' . $file->get_filename() . ' (' . $file->get_mimetype() . ', ' . $file->get_filesize() . ' bytes)'
-            . ' | Fields: index=false, analyze=true';
-        debugging($requestlog, DEBUG_DEVELOPER);
-
         $response = curl_exec($ch);
         $httpcode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $effectiveurl = curl_getinfo($ch, CURLINFO_EFFECTIVE_URL);
         $curlerror = curl_error($ch);
         curl_close($ch);
 
@@ -198,17 +198,8 @@ class api_client {
 
         $data = json_decode($response, true);
 
-        // Log the full response details to frontend.
-        $responselog = 'Originality submit_file RESPONSE: '
-            . 'HTTP ' . $httpcode
-            . ' | Effective URL: ' . $effectiveurl
-            . ' | curl error: ' . ($curlerror ?: '(none)')
-            . ' | Body: ' . substr($response, 0, 1000);
-        debugging($responselog, DEBUG_DEVELOPER);
-
         if ($httpcode < 200 || $httpcode >= 300 || $data === null) {
             $error = $this->extract_api_error($data, $response);
-            \core\notification::error('Originality file submit FAILED: HTTP ' . $httpcode . ' | ' . $error);
             throw new \moodle_exception('apierror', 'plagiarism_originality', '', $error);
         }
 
@@ -276,6 +267,54 @@ class api_client {
     }
 
     /**
+     * Search documents by context filter (e.g. course module ID).
+     *
+     * Returns all documents matching the given context key/value pair.
+     *
+     * @param string $contextkey The context key to filter by (e.g. 'moodle_cm_id').
+     * @param string $contextvalue The value to match.
+     * @return array The decoded JSON response (array of documents).
+     * @throws \moodle_exception On request failure.
+     */
+    public function search_documents(string $contextkey, string $contextvalue): array {
+        $token = $this->get_access_token();
+        $searchurl = $this->apiurl . '/documents/search';
+
+        $body = json_encode([
+            'context' => [
+                $contextkey => $contextvalue,
+            ],
+        ]);
+
+        $ch = curl_init();
+        curl_setopt_array($ch, [
+            CURLOPT_URL            => $searchurl,
+            CURLOPT_POST           => true,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_HTTPHEADER     => [
+                'Authorization: Bearer ' . $token,
+                'Content-Type: application/json',
+                'Accept: application/json',
+            ],
+            CURLOPT_POSTFIELDS     => $body,
+        ]);
+
+        $response = curl_exec($ch);
+        $httpcode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+
+        $data = json_decode($response, true);
+
+        if ($httpcode < 200 || $httpcode >= 300 || $data === null) {
+            $error = $this->extract_api_error($data, $response);
+            throw new \moodle_exception('apierror', 'plagiarism_originality', '', $error);
+        }
+
+        return $data;
+    }
+
+    /**
      * Poll the external service for the status/result of a submission.
      *
      * @param string $externalid The external submission ID.
@@ -284,7 +323,7 @@ class api_client {
      */
     public function get_submission_status(string $externalid): array {
         $token = $this->get_access_token();
-        $statusurl = $this->apiurl . '/v1/documents/' . urlencode($externalid);
+        $statusurl = $this->apiurl . '/documents/' . urlencode($externalid);
 
         $ch = curl_init();
         curl_setopt_array($ch, [
@@ -336,10 +375,6 @@ class api_client {
         $response = curl_exec($ch);
         $httpcode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         curl_close($ch);
-
-        debugging('Originality delete_document: URL: ' . $deleteurl
-            . ' | HTTP ' . $httpcode
-            . ' | Body: ' . substr($response, 0, 500), DEBUG_DEVELOPER);
 
         // 200, 204, 404 are all acceptable (404 means already gone).
         if ($httpcode >= 300 && $httpcode !== 404) {

@@ -31,17 +31,19 @@ if (!defined('MOODLE_INTERNAL')) {
 
 //get global class
 global $CFG;
-require_once($CFG->dirroot.'/plagiarism/lib.php');
+require_once($CFG->dirroot . '/plagiarism/lib.php');
 
 ///// Turnitin Class ////////////////////////////////////////////////////
-class plagiarism_plugin_originality extends plagiarism_plugin {
-     /**
+class plagiarism_plugin_originality extends plagiarism_plugin
+{
+    /**
      * hook to allow plagiarism specific information to be displayed beside a submission 
      * @param array  $linkarraycontains all relevant information for the plugin to generate a link
      * @return string
      * 
      */
-    public function get_links($linkarray) {
+    public function get_links($linkarray)
+    {
         global $DB;
 
         $cmid = $linkarray['cmid'];
@@ -76,35 +78,138 @@ class plagiarism_plugin_originality extends plagiarism_plugin {
             return $output;
         }
 
-        switch ((int) $filerecord->status) {
-            case 0: // Pending.
-                $output .= html_writer::tag('span',
-                    get_string('status_pending', 'plagiarism_originality'),
-                    ['class' => 'plagiarism-originality-pending']);
-                break;
-            case 1: // Submitted.
-                $output .= html_writer::tag('span',
-                    get_string('status_submitted', 'plagiarism_originality'),
-                    ['class' => 'plagiarism-originality-submitted']);
-                break;
-            case 2: // Complete.
-                $score = $filerecord->score ?? 0;
-                $output .= html_writer::tag('span',
-                    get_string('similarity', 'plagiarism_originality', $score),
-                    ['class' => 'plagiarism-originality-score']);
-                if (!empty($filerecord->reporturl)) {
-                    $output .= ' ' . html_writer::link(
-                        $filerecord->reporturl,
-                        get_string('viewreport', 'plagiarism_originality'),
-                        ['target' => '_blank', 'class' => 'plagiarism-originality-report']
+        // Batch-fetch all document statuses for this course module from the API.
+        if (!empty($filerecord->externalid)) {
+            try {
+                $client = \plagiarism_originality\api_client::create();
+                $results = $client->search_documents('moodle_cm_id', (string) $cmid);
+                $apidocs = [];
+                // Index results by document ID for quick lookup.
+                if (is_array($results)) {
+                    // Handle both {documents: [...]} wrapper and plain array.
+                    $documents = $results['documents'] ?? $results;
+                    foreach ($documents as $doc) {
+                        $docid = (string) ($doc['documentId'] ?? $doc['id'] ?? '');
+                        if (!empty($docid)) {
+                            $apidocs[$docid] = $doc;
+                        }
+                    }
+                }
+            } catch (\Exception $e) {
+                $apidocs = [];
+            }
+        }
+
+        // Look up this file's document in the search results.
+        $document = null;
+        if (!empty($filerecord->externalid) && isset($apidocs[$filerecord->externalid])) {
+            $document = $apidocs[$filerecord->externalid];
+        }
+
+        if ($document !== null) {
+            $apistatus = $document['status'] ?? '';
+            $score = null;
+            $viewerlink = null;
+
+            if (isset($document['result']['score'])) {
+                $score = (int) round($document['result']['score'] * 100);
+            }
+            if (!empty($document['result']['viewerLink'])) {
+                $viewerlink = $document['result']['viewerLink'];
+            }
+
+            // Update local record with latest data from API.
+            $update = new \stdClass();
+            $update->id = $filerecord->id;
+            $update->timemodified = time();
+
+            if ($apistatus === 'complete' || $apistatus === 'available') {
+                $update->status = 2;
+                if ($score !== null) {
+                    $update->score = $score;
+                }
+                if ($viewerlink) {
+                    $update->reporturl = $viewerlink;
+                }
+            } else if ($apistatus === 'failed') {
+                $update->status = 3;
+                $update->errorresponse = $document['detail'] ?? 'External processing failed';
+            } else if ($apistatus === 'in_progress') {
+                $update->status = 1;
+            }
+            $DB->update_record('plagiarism_originality_files', $update);
+
+            // Display based on API status.
+            // Show report link only if user has viewreport capability OR student report viewing is enabled.
+            $canviewreport = static::can_user_view_report($cmid, $userid);
+            if ($canviewreport) {
+                $reporturl = new moodle_url('/plagiarism/originality/report.php', ['id' => $filerecord->id]);
+                $output .=
+                    html_writer::empty_tag('br') . html_writer::link(
+                    $reporturl,
+                    get_string('viewreport', 'plagiarism_originality'),
+                    ['target' => '_blank', 'class' => 'plagiarism-originality-report']
+                ) . html_writer::empty_tag('br');
+            }
+
+            if ($canviewreport) {
+                $output .= html_writer::tag(
+                    'span',
+                    get_string('status', 'plagiarism_originality', $apistatus),
+                    ['class' => 'plagiarism-originality-status']
+                ) . html_writer::empty_tag('br');
+
+                if ($score !== null) {
+                    $output .= ' ' . html_writer::tag(
+                        'span',
+                        get_string('similarity', 'plagiarism_originality', $score),
+                        ['class' => 'plagiarism-originality-score']
                     );
                 }
-                break;
-            case 3: // Error.
-                $output .= html_writer::tag('span',
-                    get_string('status_error', 'plagiarism_originality'),
-                    ['class' => 'plagiarism-originality-error']);
-                break;
+            }
+
+            return $output;
+        }
+
+        // Fallback: display based on local status when no API data available.
+        // Only show status/score to users who can view reports.
+        if (static::can_user_view_report($cmid, $userid)) {
+            switch ((int) $filerecord->status) {
+                case 0: // Pending.
+                    $output .= html_writer::tag(
+                        'span',
+                        get_string('status_pending', 'plagiarism_originality'),
+                        ['class' => 'plagiarism-originality-pending']
+                    );
+                    break;
+                case 1: // Submitted.
+                    $output .= html_writer::tag(
+                        'span',
+                        get_string('status_submitted', 'plagiarism_originality'),
+                        ['class' => 'plagiarism-originality-submitted']
+                    );
+                    break;
+                case 2: // Complete.
+                    $score = $filerecord->score ?? 0;
+                    $output .= html_writer::tag(
+                        'span',
+                        get_string('status_complete', 'plagiarism_originality'),
+                        ['class' => 'plagiarism-originality-complete']
+                    );
+                    $output .= ' ' . html_writer::tag(
+                        'span',
+                        get_string('similarity', 'plagiarism_originality', $score),
+                        ['class' => 'plagiarism-originality-score']
+                    );
+                    break;
+                case 3: // Error.
+                    $output .= html_writer::tag(
+                        'span',
+                        get_string('status_error', 'plagiarism_originality'),
+                        ['class' => 'plagiarism-originality-error']
+                    );
+                    break;
+            }
         }
 
         return $output;
@@ -113,21 +218,25 @@ class plagiarism_plugin_originality extends plagiarism_plugin {
     /* hook to save plagiarism specific settings on a module settings page
      * @param object $data - data from an mform submission.
     */
-    public function save_form_elements($data) {
+    public function save_form_elements($data)
+    {
         global $DB;
         if (!isset($data->coursemodule)) {
             return;
         }
         $cmid = $data->coursemodule;
         $enabled = isset($data->originality_enabled) ? (int) $data->originality_enabled : 0;
+        $studentreport = isset($data->originality_student_report) ? (int) $data->originality_student_report : 0;
 
         if ($record = $DB->get_record('plagiarism_originality_settings', ['cm' => $cmid])) {
             $record->enabled = $enabled;
+            $record->student_report = $studentreport;
             $DB->update_record('plagiarism_originality_settings', $record);
         } else {
             $record = new stdClass();
             $record->cm = $cmid;
             $record->enabled = $enabled;
+            $record->student_report = $studentreport;
             $DB->insert_record('plagiarism_originality_settings', $record);
         }
     }
@@ -137,11 +246,17 @@ class plagiarism_plugin_originality extends plagiarism_plugin {
      * @param object $mform  - Moodle form
      * @param object $context - current context
      */
-    public function get_form_elements_module($mform, $context, $modulename = '') {
+    public function get_form_elements_module($mform, $context, $modulename = '')
+    {
         global $DB;
 
         $plagiarismsettings = (array) get_config('plagiarism_originality');
         if (empty($plagiarismsettings['originality_use'])) {
+            return;
+        }
+
+        // Check if originiality is enabled for this activity type.
+        if (!static::is_module_supported($modulename, $plagiarismsettings)) {
             return;
         }
 
@@ -150,8 +265,18 @@ class plagiarism_plugin_originality extends plagiarism_plugin {
         $mform->addElement('header', 'originalitydesc', get_string('pluginname', 'plagiarism_originality'));
         $mform->addElement('checkbox', 'originality_enabled', get_string('originality_enable', 'plagiarism_originality'));
 
+        // Only show student report option if it is enabled globally.
+        if (!empty($plagiarismsettings['originality_student_report'])) {
+            $mform->addElement('checkbox', 'originality_student_report', get_string('allow_student_report_activity', 'plagiarism_originality'));
+            $mform->addHelpButton('originality_student_report', 'allow_student_report_activity', 'plagiarism_originality');
+            $mform->disabledIf('originality_student_report', 'originality_enabled');
+        }
+
         if ($cmid && $record = $DB->get_record('plagiarism_originality_settings', ['cm' => $cmid])) {
             $mform->setDefault('originality_enabled', $record->enabled);
+            if (isset($record->student_report)) {
+                $mform->setDefault('originality_student_report', $record->student_report);
+            }
         }
     }
 
@@ -160,7 +285,8 @@ class plagiarism_plugin_originality extends plagiarism_plugin {
      * @param int $cmid - course module id
      * @return string
      */
-    public function print_disclosure($cmid) {
+    public function print_disclosure($cmid)
+    {
         global $DB, $OUTPUT;
 
         $plagiarismsettings = (array) get_config('plagiarism_originality');
@@ -186,12 +312,96 @@ class plagiarism_plugin_originality extends plagiarism_plugin {
     }
 
     /**
+     * Check whether the current user is allowed to view the report for a given course module and file owner.
+     *
+     * Teachers/managers always see reports (via viewreport capability).
+     * Students see reports only if global + per-activity student_report settings are both enabled.
+     *
+     * @param int $cmid Course module ID.
+     * @param int $fileuserid The user who owns the submission.
+     * @return bool
+     */
+    public static function can_user_view_report(int $cmid, int $fileuserid): bool {
+        global $DB, $USER;
+
+        $context = \context_module::instance($cmid, IGNORE_MISSING);
+        if (!$context) {
+            return false;
+        }
+
+        // Users with the viewreport capability (teachers/managers) always see reports.
+        if (has_capability('plagiarism/originality:viewreport', $context)) {
+            return true;
+        }
+
+        // For the submitting student: check global + per-activity settings.
+        if ((int) $USER->id !== (int) $fileuserid) {
+            return false;
+        }
+
+        $globalsettings = (array) get_config('plagiarism_originality');
+        if (empty($globalsettings['originality_student_report'])) {
+            return false;
+        }
+
+        $modsettings = $DB->get_record('plagiarism_originality_settings', ['cm' => $cmid]);
+        if (empty($modsettings) || empty($modsettings->student_report)) {
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * List of activity modules that support plagiarism checking.
+     */
+    const SUPPORTED_MODULES = ['assign', 'forum', 'workshop', 'quiz'];
+
+    /**
+     * Check if a module type is supported and enabled in global settings.
+     *
+     * @param string $modulename Module name (e.g. 'assign', 'mod_assign').
+     * @param array|null $settings Global plugin settings (loaded if null).
+     * @return bool
+     */
+    public static function is_module_supported(string $modulename, ?array $settings = null): bool {
+        // Normalise: strip 'mod_' prefix if present.
+        $modulename = preg_replace('/^mod_/', '', $modulename);
+
+        if (!in_array($modulename, static::SUPPORTED_MODULES)) {
+            return false;
+        }
+
+        if ($settings === null) {
+            $settings = (array) get_config('plagiarism_originality');
+        }
+
+        $key = 'originality_mod_' . $modulename;
+        return !empty($settings[$key]);
+    }
+
+    /**
+     * Get the module name (e.g. 'assign') for a given course module ID.
+     *
+     * @param int $cmid
+     * @return string Module name or empty string if not found.
+     */
+    public static function get_module_name(int $cmid): string {
+        global $DB;
+        $sql = "SELECT m.name FROM {modules} m
+                  JOIN {course_modules} cm ON cm.module = m.id
+                 WHERE cm.id = :cmid";
+        return $DB->get_field_sql($sql, ['cmid' => $cmid]) ?: '';
+    }
+
+    /**
      * hook to allow status of submitted files to be updated - called on grading/report pages.
      *
      * @param object $course - full Course object
      * @param object $cm - full cm object
      */
-    public function update_status($course, $cm) {
+    public function update_status($course, $cm)
+    {
         //called at top of submissions/grading pages - allows printing of admin style links or updating status
     }
 
@@ -199,31 +409,37 @@ class plagiarism_plugin_originality extends plagiarism_plugin {
      * called by admin/cron.php 
      *
      */
-    public function cron() {
+    public function cron()
+    {
         //do any scheduled task stuff
     }
 }
 
-function originality_event_file_uploaded($eventdata) {
+function originality_event_file_uploaded($eventdata)
+{
     $result = true;
     return $result;
 }
-function originality_event_files_done($eventdata) {
-    $result = true;
-    return $result;
-}
-
-function originality_event_mod_created($eventdata) {
-    $result = true;
-    return $result;
-}
-
-function originality_event_mod_updated($eventdata) {
+function originality_event_files_done($eventdata)
+{
     $result = true;
     return $result;
 }
 
-function originality_event_mod_deleted($eventdata) {
+function originality_event_mod_created($eventdata)
+{
+    $result = true;
+    return $result;
+}
+
+function originality_event_mod_updated($eventdata)
+{
+    $result = true;
+    return $result;
+}
+
+function originality_event_mod_deleted($eventdata)
+{
     $result = true;
     return $result;
 }
@@ -235,7 +451,8 @@ function originality_event_mod_deleted($eventdata) {
  * @param int $cmid The course module ID.
  * @param int $userid The user who submitted the file.
  */
-function plagiarism_originality_submit_file(\stored_file $file, int $cmid, int $userid): void {
+function plagiarism_originality_submit_file(\stored_file $file, int $cmid, int $userid): void
+{
     global $DB;
 
     $identifier = $file->get_contenthash();
@@ -270,24 +487,13 @@ function plagiarism_originality_submit_file(\stored_file $file, int $cmid, int $
         $DB->update_record('plagiarism_originality_files', $record);
     }
 
-    // Attempt to send to the external service.
-    try {
-        $client = \plagiarism_originality\api_client::create();
-        $response = $client->submit_file($file, $cmid, $userid);
-
-        $record->externalid = (string) ($response['documentId'] ?? '');
-        $record->status = 1; // Submitted.
-        $record->attempts = $record->attempts + 1;
-        $record->timemodified = time();
-        $DB->update_record('plagiarism_originality_files', $record);
-    } catch (\Exception $e) {
-        $record->status = 3; // Error.
-        $record->errorresponse = $e->getMessage();
-        $record->attempts = $record->attempts + 1;
-        $record->timemodified = time();
-        $DB->update_record('plagiarism_originality_files', $record);
-        debugging('Originality file submit failed: ' . $e->getMessage(), DEBUG_DEVELOPER);
-    }
+    // Queue an adhoc task to submit the file in the background with retry.
+    $task = new \plagiarism_originality\task\submit_to_originality();
+    $task->set_custom_data([
+        'record_id' => $record->id,
+        'attempt' => 1,
+    ]);
+    \core\task\manager::queue_adhoc_task($task);
 }
 
 /**
@@ -297,7 +503,8 @@ function plagiarism_originality_submit_file(\stored_file $file, int $cmid, int $
  * @param int $cmid The course module ID.
  * @param int $userid The user who submitted the content.
  */
-function plagiarism_originality_submit_text(string $content, int $cmid, int $userid): void {
+function plagiarism_originality_submit_text(string $content, int $cmid, int $userid): void
+{
     global $DB;
 
     $identifier = sha1($content);
@@ -329,23 +536,13 @@ function plagiarism_originality_submit_text(string $content, int $cmid, int $use
         $DB->update_record('plagiarism_originality_files', $record);
     }
 
-    try {
-        $client = \plagiarism_originality\api_client::create();
-        $response = $client->submit_text($content, $cmid, $userid);
-
-        $record->externalid = (string) ($response['documentId'] ?? '');
-        $record->status = 1;
-        $record->attempts = $record->attempts + 1;
-        $record->timemodified = time();
-        $DB->update_record('plagiarism_originality_files', $record);
-    } catch (\Exception $e) {
-        $record->status = 3;
-        $record->errorresponse = $e->getMessage();
-        $record->attempts = $record->attempts + 1;
-        $record->timemodified = time();
-        $DB->update_record('plagiarism_originality_files', $record);
-        debugging('Originality text submit failed: ' . $e->getMessage(), DEBUG_DEVELOPER);
-    }
+    // Queue an adhoc task to submit the text in the background with retry.
+    $task = new \plagiarism_originality\task\submit_to_originality();
+    $task->set_custom_data([
+        'record_id' => $record->id,
+        'attempt' => 1,
+    ]);
+    \core\task\manager::queue_adhoc_task($task);
 }
 
 /**
@@ -355,7 +552,8 @@ function plagiarism_originality_submit_text(string $content, int $cmid, int $use
  * @param moodleform_mod $formwrapper The form wrapper.
  * @param MoodleQuickForm $mform The form.
  */
-function plagiarism_originality_coursemodule_standard_elements($formwrapper, $mform) {
+function plagiarism_originality_coursemodule_standard_elements($formwrapper, $mform)
+{
     $plugin = new plagiarism_plugin_originality();
     $context = $formwrapper->get_context();
     $plugin->get_form_elements_module($mform, $context, $formwrapper->get_current()->modulename ?? '');
@@ -369,7 +567,8 @@ function plagiarism_originality_coursemodule_standard_elements($formwrapper, $mf
  * @param stdClass $course The course object.
  * @return stdClass The (possibly modified) data.
  */
-function plagiarism_originality_coursemodule_edit_post_actions($data, $course) {
+function plagiarism_originality_coursemodule_edit_post_actions($data, $course)
+{
     $plugin = new plagiarism_plugin_originality();
     $plugin->save_form_elements($data);
     return $data;

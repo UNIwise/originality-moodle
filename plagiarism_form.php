@@ -39,6 +39,33 @@ class plagiarism_setup_form extends moodleform {
         $mform->addRule('originality_client_secret', null, 'required', null, 'client');
         $mform->disabledIf('originality_client_secret', 'originality_use');
 
+        // Report visibility settings.
+        $mform->addElement('header', 'originality_report_header', get_string('reportsettings', 'plagiarism_originality'));
+
+        $mform->addElement('checkbox', 'originality_student_report', get_string('allow_student_report', 'plagiarism_originality'));
+        $mform->addHelpButton('originality_student_report', 'allow_student_report', 'plagiarism_originality');
+        $mform->setDefault('originality_student_report', 0);
+        $mform->disabledIf('originality_student_report', 'originality_use');
+
+        // Activity type settings.
+        $mform->addElement('header', 'originality_mods_header', get_string('activitiessettings', 'plagiarism_originality'));
+
+        $mform->addElement('checkbox', 'originality_mod_assign', get_string('enable_mod_assign', 'plagiarism_originality'));
+        $mform->setDefault('originality_mod_assign', 1);
+        $mform->disabledIf('originality_mod_assign', 'originality_use');
+
+        $mform->addElement('checkbox', 'originality_mod_forum', get_string('enable_mod_forum', 'plagiarism_originality'));
+        $mform->setDefault('originality_mod_forum', 0);
+        $mform->disabledIf('originality_mod_forum', 'originality_use');
+
+        $mform->addElement('checkbox', 'originality_mod_workshop', get_string('enable_mod_workshop', 'plagiarism_originality'));
+        $mform->setDefault('originality_mod_workshop', 0);
+        $mform->disabledIf('originality_mod_workshop', 'originality_use');
+
+        $mform->addElement('checkbox', 'originality_mod_quiz', get_string('enable_mod_quiz', 'plagiarism_originality'));
+        $mform->setDefault('originality_mod_quiz', 0);
+        $mform->disabledIf('originality_mod_quiz', 'originality_use');
+
         $this->add_action_buttons(true);
     }
 }
