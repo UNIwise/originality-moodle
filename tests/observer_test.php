@@ -99,6 +99,11 @@ final class observer_test extends \advanced_testcase {
 
     // Event gating tests (no real submissions needed).
 
+    /**
+     * Test observer does nothing when plugin is disabled.
+     *
+     * @covers \plagiarism_originality\observer::assessable_submitted
+     */
     public function test_observer_does_nothing_when_plugin_disabled(): void {
         global $DB;
         $this->resetAfterTest();
@@ -124,6 +129,11 @@ final class observer_test extends \advanced_testcase {
         $this->assertEquals(0, $count);
     }
 
+    /**
+     * Test observer does nothing when module is unsupported.
+     *
+     * @covers \plagiarism_originality\observer::assessable_submitted
+     */
     public function test_observer_does_nothing_when_module_unsupported(): void {
         global $DB;
         $this->resetAfterTest();
@@ -148,6 +158,11 @@ final class observer_test extends \advanced_testcase {
         $this->assertEquals(0, $count);
     }
 
+    /**
+     * Test observer does nothing when activity is disabled.
+     *
+     * @covers \plagiarism_originality\observer::assessable_submitted
+     */
     public function test_observer_does_nothing_when_activity_disabled(): void {
         global $DB;
         $this->resetAfterTest();
@@ -171,6 +186,11 @@ final class observer_test extends \advanced_testcase {
         $this->assertEquals(0, $count);
     }
 
+    /**
+     * Test observer skips when submit on marking.
+     *
+     * @covers \plagiarism_originality\observer::assessable_submitted
+     */
     public function test_observer_skips_when_submit_on_marking(): void {
         global $DB;
         $this->resetAfterTest();
@@ -195,6 +215,11 @@ final class observer_test extends \advanced_testcase {
         $this->assertEquals(0, $count);
     }
 
+    /**
+     * Test observer processes online text on upload.
+     *
+     * @covers \plagiarism_originality\observer::assessable_submitted
+     */
     public function test_observer_processes_online_text_on_upload(): void {
         global $DB;
         $this->resetAfterTest();
@@ -229,6 +254,11 @@ final class observer_test extends \advanced_testcase {
 
     // Submission removed.
 
+    /**
+     * Test submission removed queues delete tasks.
+     *
+     * @covers \plagiarism_originality\observer::submission_removed
+     */
     public function test_submission_removed_queues_delete_tasks(): void {
         global $DB;
         $this->resetAfterTest();
@@ -284,6 +314,11 @@ final class observer_test extends \advanced_testcase {
         $this->assertCount(2, $tasks);
     }
 
+    /**
+     * Test submission removed does nothing when plugin is disabled.
+     *
+     * @covers \plagiarism_originality\observer::submission_removed
+     */
     public function test_submission_removed_does_nothing_when_plugin_disabled(): void {
         global $DB;
         $this->resetAfterTest();

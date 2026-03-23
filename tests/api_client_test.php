@@ -38,6 +38,11 @@ defined('MOODLE_INTERNAL') || die();
 final class api_client_test extends \advanced_testcase {
     // Constructor / URL normalization.
 
+    /**
+     * Test that the constructor strips a trailing slash from the API URL.
+     *
+     * @covers \plagiarism_originality\api_client::__construct
+     */
     public function test_constructor_strips_trailing_slash(): void {
         $client = new api_client('https://api.example.com/', 'id', 'secret');
 
@@ -50,6 +55,11 @@ final class api_client_test extends \advanced_testcase {
         $this->assertEquals('https://api.example.com', $prop->getValue($client));
     }
 
+    /**
+     * Test that the constructor handles a URL without a trailing slash.
+     *
+     * @covers \plagiarism_originality\api_client::__construct
+     */
     public function test_constructor_handles_url_without_trailing_slash(): void {
         $client = new api_client('https://api.example.com', 'id', 'secret');
 
@@ -59,6 +69,11 @@ final class api_client_test extends \advanced_testcase {
         $this->assertEquals('https://api.example.com', $prop->getValue($client));
     }
 
+    /**
+     * Test that the constructor strips multiple trailing slashes from the API URL.
+     *
+     * @covers \plagiarism_originality\api_client::__construct
+     */
     public function test_constructor_strips_multiple_trailing_slashes(): void {
         $client = new api_client('https://api.example.com///', 'id', 'secret');
 
@@ -70,6 +85,11 @@ final class api_client_test extends \advanced_testcase {
 
     // Factory create() - missing config.
 
+    /**
+     * Test that create() throws when the API URL is missing.
+     *
+     * @covers \plagiarism_originality\api_client::create
+     */
     public function test_create_throws_when_api_url_missing(): void {
         $this->resetAfterTest();
 
@@ -81,6 +101,11 @@ final class api_client_test extends \advanced_testcase {
         api_client::create();
     }
 
+    /**
+     * Test that create() throws when the client ID is missing.
+     *
+     * @covers \plagiarism_originality\api_client::create
+     */
     public function test_create_throws_when_client_id_missing(): void {
         $this->resetAfterTest();
 
@@ -92,6 +117,11 @@ final class api_client_test extends \advanced_testcase {
         api_client::create();
     }
 
+    /**
+     * Test that create() throws when the client secret is missing.
+     *
+     * @covers \plagiarism_originality\api_client::create
+     */
     public function test_create_throws_when_client_secret_missing(): void {
         $this->resetAfterTest();
 
@@ -103,6 +133,11 @@ final class api_client_test extends \advanced_testcase {
         api_client::create();
     }
 
+    /**
+     * Test that create() succeeds when all config values are present.
+     *
+     * @covers \plagiarism_originality\api_client::create
+     */
     public function test_create_succeeds_with_all_config(): void {
         $this->resetAfterTest();
 
@@ -116,6 +151,11 @@ final class api_client_test extends \advanced_testcase {
 
     // Get_access_token() - in-memory cache.
 
+    /**
+     * Test that get_access_token returns the cached in-memory token.
+     *
+     * @covers \plagiarism_originality\api_client::get_access_token
+     */
     public function test_get_access_token_returns_cached_inmemory_token(): void {
         $this->resetAfterTest();
 
@@ -136,6 +176,11 @@ final class api_client_test extends \advanced_testcase {
         $this->assertEquals('cached_token_value', $token);
     }
 
+    /**
+     * Test that get_access_token returns a persistent cached token.
+     *
+     * @covers \plagiarism_originality\api_client::get_access_token
+     */
     public function test_get_access_token_returns_persistent_cached_token(): void {
         $this->resetAfterTest();
 
@@ -149,6 +194,11 @@ final class api_client_test extends \advanced_testcase {
         $this->assertEquals('persistent_token', $token);
     }
 
+    /**
+     * Test that get_access_token ignores an expired persistent cached token.
+     *
+     * @covers \plagiarism_originality\api_client::get_access_token
+     */
     public function test_get_access_token_ignores_expired_persistent_cache(): void {
         $this->resetAfterTest();
 
@@ -165,6 +215,11 @@ final class api_client_test extends \advanced_testcase {
 
     // Extract_api_error() - tested via reflection.
 
+    /**
+     * Test extract_api_error with title and detail fields.
+     *
+     * @covers \plagiarism_originality\api_client::extract_api_error
+     */
     public function test_extract_api_error_with_title_and_detail(): void {
         $client = new api_client('https://api.example.com', 'id', 'secret');
         $method = new \ReflectionMethod($client, 'extract_api_error');
@@ -176,6 +231,11 @@ final class api_client_test extends \advanced_testcase {
         $this->assertEquals('Not Found | Document does not exist', $result);
     }
 
+    /**
+     * Test extract_api_error with an errorDetails array.
+     *
+     * @covers \plagiarism_originality\api_client::extract_api_error
+     */
     public function test_extract_api_error_with_error_details_array(): void {
         $client = new api_client('https://api.example.com', 'id', 'secret');
         $method = new \ReflectionMethod($client, 'extract_api_error');
@@ -194,6 +254,11 @@ final class api_client_test extends \advanced_testcase {
         $this->assertStringContainsString('required', $result);
     }
 
+    /**
+     * Test extract_api_error falls back to raw response when data is null.
+     *
+     * @covers \plagiarism_originality\api_client::extract_api_error
+     */
     public function test_extract_api_error_falls_back_to_raw_response(): void {
         $client = new api_client('https://api.example.com', 'id', 'secret');
         $method = new \ReflectionMethod($client, 'extract_api_error');
@@ -203,6 +268,11 @@ final class api_client_test extends \advanced_testcase {
         $this->assertEquals('raw error body', $result);
     }
 
+    /**
+     * Test extract_api_error returns raw response when data is empty.
+     *
+     * @covers \plagiarism_originality\api_client::extract_api_error
+     */
     public function test_extract_api_error_empty_data_returns_raw(): void {
         $client = new api_client('https://api.example.com', 'id', 'secret');
         $method = new \ReflectionMethod($client, 'extract_api_error');

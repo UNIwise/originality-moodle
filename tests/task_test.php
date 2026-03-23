@@ -42,6 +42,11 @@ require_once($CFG->dirroot . '/plagiarism/originality/lib.php');
 final class task_test extends \advanced_testcase {
     // Submit to originality - record not found.
 
+    /**
+     * Test that the submit task skips a missing record.
+     *
+     * @covers \plagiarism_originality\task\submit_to_originality::execute
+     */
     public function test_submit_task_skips_missing_record(): void {
         $this->resetAfterTest();
 
@@ -55,6 +60,11 @@ final class task_test extends \advanced_testcase {
         $task->execute();
     }
 
+    /**
+     * Test that the submit task skips an already submitted record.
+     *
+     * @covers \plagiarism_originality\task\submit_to_originality::execute
+     */
     public function test_submit_task_skips_already_submitted_record(): void {
         global $DB;
         $this->resetAfterTest();
@@ -89,6 +99,11 @@ final class task_test extends \advanced_testcase {
         $this->assertEquals(1, (int) $record->status);
     }
 
+    /**
+     * Test that the submit task skips a completed record.
+     *
+     * @covers \plagiarism_originality\task\submit_to_originality::execute
+     */
     public function test_submit_task_skips_completed_record(): void {
         global $DB;
         $this->resetAfterTest();
@@ -125,6 +140,11 @@ final class task_test extends \advanced_testcase {
         $this->assertEquals(25, (int) $record->score);
     }
 
+    /**
+     * Test that the submit task skips an onlinetext retry.
+     *
+     * @covers \plagiarism_originality\task\submit_to_originality::execute
+     */
     public function test_submit_task_skips_onlinetext_retry(): void {
         global $DB;
         $this->resetAfterTest();
@@ -161,6 +181,11 @@ final class task_test extends \advanced_testcase {
 
     // Delete from originality.
 
+    /**
+     * Test that the delete task cleans up a record without an external ID.
+     *
+     * @covers \plagiarism_originality\task\delete_from_originality::execute
+     */
     public function test_delete_task_cleans_up_record_without_external_id(): void {
         global $DB;
         $this->resetAfterTest();
@@ -198,6 +223,11 @@ final class task_test extends \advanced_testcase {
 
     // Submit files scheduled task - gating.
 
+    /**
+     * Test that the submit files task exits when the plugin is disabled.
+     *
+     * @covers \plagiarism_originality\task\submit_files::execute
+     */
     public function test_submit_files_task_exits_when_plugin_disabled(): void {
         global $DB;
         $this->resetAfterTest();
@@ -232,6 +262,11 @@ final class task_test extends \advanced_testcase {
         $this->assertEquals(1, (int) $record->status);
     }
 
+    /**
+     * Test that the submit files task has the correct name.
+     *
+     * @covers \plagiarism_originality\task\submit_files::get_name
+     */
     public function test_submit_files_task_has_correct_name(): void {
         $task = new task\submit_files();
         $name = $task->get_name();

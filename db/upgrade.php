@@ -65,7 +65,6 @@ function xmldb_plagiarism_originality_upgrade($oldversion) {
             $dbman->create_table($table);
         }
 
-
         // Originality savepoint reached.
         upgrade_plugin_savepoint(true, 2026022401, 'plagiarism', 'originality');
     }

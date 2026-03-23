@@ -40,4 +40,4 @@ $capabilities = [
             'manager' => CAP_ALLOW,
         ],
     ],
-);
+];

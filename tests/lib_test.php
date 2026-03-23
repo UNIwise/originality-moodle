@@ -62,6 +62,11 @@ final class lib_test extends \advanced_testcase {
 
     // Tests for is_module_supported().
 
+    /**
+     * Test is_module_supported returns true for an enabled module.
+     *
+     * @covers \plagiarism_plugin_originality::is_module_supported
+     */
     public function test_is_module_supported_returns_true_for_enabled_module(): void {
         $this->resetAfterTest();
 
@@ -70,6 +75,11 @@ final class lib_test extends \advanced_testcase {
         $this->assertTrue(\plagiarism_plugin_originality::is_module_supported('assign'));
     }
 
+    /**
+     * Test is_module_supported strips the mod_ prefix.
+     *
+     * @covers \plagiarism_plugin_originality::is_module_supported
+     */
     public function test_is_module_supported_strips_mod_prefix(): void {
         $this->resetAfterTest();
 
@@ -78,6 +88,11 @@ final class lib_test extends \advanced_testcase {
         $this->assertTrue(\plagiarism_plugin_originality::is_module_supported('mod_forum'));
     }
 
+    /**
+     * Test is_module_supported returns false for a disabled module.
+     *
+     * @covers \plagiarism_plugin_originality::is_module_supported
+     */
     public function test_is_module_supported_returns_false_for_disabled_module(): void {
         $this->resetAfterTest();
 
@@ -86,6 +101,11 @@ final class lib_test extends \advanced_testcase {
         $this->assertFalse(\plagiarism_plugin_originality::is_module_supported('assign'));
     }
 
+    /**
+     * Test is_module_supported returns false for an unknown module.
+     *
+     * @covers \plagiarism_plugin_originality::is_module_supported
+     */
     public function test_is_module_supported_returns_false_for_unknown_module(): void {
         $this->resetAfterTest();
 
@@ -93,6 +113,11 @@ final class lib_test extends \advanced_testcase {
         $this->assertFalse(\plagiarism_plugin_originality::is_module_supported('mod_chat'));
     }
 
+    /**
+     * Test is_module_supported uses explicitly passed settings.
+     *
+     * @covers \plagiarism_plugin_originality::is_module_supported
+     */
     public function test_is_module_supported_uses_passed_settings(): void {
         $this->resetAfterTest();
 
@@ -103,6 +128,11 @@ final class lib_test extends \advanced_testcase {
         $this->assertFalse(\plagiarism_plugin_originality::is_module_supported('workshop', $settings));
     }
 
+    /**
+     * Test is_module_supported for all supported modules.
+     *
+     * @covers \plagiarism_plugin_originality::is_module_supported
+     */
     public function test_is_module_supported_all_supported_modules(): void {
         $this->resetAfterTest();
 
@@ -123,6 +153,11 @@ final class lib_test extends \advanced_testcase {
 
     // Tests for save_form_elements().
 
+    /**
+     * Test save_form_elements inserts a new record.
+     *
+     * @covers \plagiarism_plugin_originality::save_form_elements
+     */
     public function test_save_form_elements_inserts_new_record(): void {
         global $DB;
         $this->resetAfterTest();
@@ -139,6 +174,11 @@ final class lib_test extends \advanced_testcase {
         $this->assertEquals(0, (int) $record->submit_on);
     }
 
+    /**
+     * Test save_form_elements updates an existing record.
+     *
+     * @covers \plagiarism_plugin_originality::save_form_elements
+     */
     public function test_save_form_elements_updates_existing_record(): void {
         global $DB;
         $this->resetAfterTest();
@@ -158,6 +198,11 @@ final class lib_test extends \advanced_testcase {
         $this->assertEquals(1, (int) $record->submit_on);
     }
 
+    /**
+     * Test save_form_elements defaults unchecked checkboxes to 0.
+     *
+     * @covers \plagiarism_plugin_originality::save_form_elements
+     */
     public function test_save_form_elements_defaults_unchecked_checkboxes(): void {
         global $DB;
         $this->resetAfterTest();
@@ -179,6 +224,11 @@ final class lib_test extends \advanced_testcase {
         $this->assertEquals(0, (int) $record->submit_on);
     }
 
+    /**
+     * Test save_form_elements does nothing when no coursemodule is set.
+     *
+     * @covers \plagiarism_plugin_originality::save_form_elements
+     */
     public function test_save_form_elements_no_coursemodule_does_nothing(): void {
         global $DB;
         $this->resetAfterTest();
@@ -197,6 +247,11 @@ final class lib_test extends \advanced_testcase {
 
     // Tests for can_user_view_report().
 
+    /**
+     * Test can_user_view_report allows teachers.
+     *
+     * @covers \plagiarism_plugin_originality::can_user_view_report
+     */
     public function test_can_user_view_report_teacher_always_allowed(): void {
         $this->resetAfterTest();
 
@@ -212,6 +267,11 @@ final class lib_test extends \advanced_testcase {
         );
     }
 
+    /**
+     * Test can_user_view_report denies students by default.
+     *
+     * @covers \plagiarism_plugin_originality::can_user_view_report
+     */
     public function test_can_user_view_report_student_denied_by_default(): void {
         $this->resetAfterTest();
 
@@ -226,6 +286,11 @@ final class lib_test extends \advanced_testcase {
         );
     }
 
+    /**
+     * Test can_user_view_report allows students with both settings enabled.
+     *
+     * @covers \plagiarism_plugin_originality::can_user_view_report
+     */
     public function test_can_user_view_report_student_allowed_with_both_settings(): void {
         $this->resetAfterTest();
 
@@ -243,6 +308,11 @@ final class lib_test extends \advanced_testcase {
         );
     }
 
+    /**
+     * Test can_user_view_report denies students without the global setting.
+     *
+     * @covers \plagiarism_plugin_originality::can_user_view_report
+     */
     public function test_can_user_view_report_student_denied_without_global_setting(): void {
         $this->resetAfterTest();
 
@@ -260,6 +330,11 @@ final class lib_test extends \advanced_testcase {
         );
     }
 
+    /**
+     * Test can_user_view_report denies students without the activity setting.
+     *
+     * @covers \plagiarism_plugin_originality::can_user_view_report
+     */
     public function test_can_user_view_report_student_denied_without_activity_setting(): void {
         $this->resetAfterTest();
 
@@ -277,6 +352,11 @@ final class lib_test extends \advanced_testcase {
         );
     }
 
+    /**
+     * Test can_user_view_report denies another student.
+     *
+     * @covers \plagiarism_plugin_originality::can_user_view_report
+     */
     public function test_can_user_view_report_other_student_denied(): void {
         $this->resetAfterTest();
 
@@ -297,6 +377,11 @@ final class lib_test extends \advanced_testcase {
 
     // Tests for get_module_name().
 
+    /**
+     * Test get_module_name returns the correct name.
+     *
+     * @covers \plagiarism_plugin_originality::get_module_name
+     */
     public function test_get_module_name_returns_correct_name(): void {
         $this->resetAfterTest();
 
@@ -307,6 +392,11 @@ final class lib_test extends \advanced_testcase {
         $this->assertEquals('assign', $name);
     }
 
+    /**
+     * Test get_module_name returns empty for an invalid cmid.
+     *
+     * @covers \plagiarism_plugin_originality::get_module_name
+     */
     public function test_get_module_name_returns_empty_for_invalid_cmid(): void {
         $this->resetAfterTest();
 
@@ -316,6 +406,11 @@ final class lib_test extends \advanced_testcase {
 
     // Tests for get_links().
 
+    /**
+     * Test get_links returns empty when the plugin is disabled.
+     *
+     * @covers \plagiarism_plugin_originality::get_links
+     */
     public function test_get_links_returns_empty_when_plugin_disabled(): void {
         $this->resetAfterTest();
 
@@ -334,6 +429,11 @@ final class lib_test extends \advanced_testcase {
         $this->assertEquals('', $output);
     }
 
+    /**
+     * Test get_links returns empty when there is no identifier.
+     *
+     * @covers \plagiarism_plugin_originality::get_links
+     */
     public function test_get_links_returns_empty_when_no_identifier(): void {
         $this->resetAfterTest();
 
@@ -352,6 +452,11 @@ final class lib_test extends \advanced_testcase {
         $this->assertEquals('', $output);
     }
 
+    /**
+     * Test get_links returns empty when there is no file record.
+     *
+     * @covers \plagiarism_plugin_originality::get_links
+     */
     public function test_get_links_returns_empty_when_no_file_record(): void {
         $this->resetAfterTest();
 
@@ -371,6 +476,11 @@ final class lib_test extends \advanced_testcase {
         $this->assertEquals('', $output);
     }
 
+    /**
+     * Test get_links shows status from a local record.
+     *
+     * @covers \plagiarism_plugin_originality::get_links
+     */
     public function test_get_links_shows_status_from_local_record(): void {
         global $DB;
         $this->resetAfterTest();
@@ -413,6 +523,11 @@ final class lib_test extends \advanced_testcase {
 
     // Tests for print_disclosure().
 
+    /**
+     * Test print_disclosure returns empty when the plugin is disabled.
+     *
+     * @covers \plagiarism_plugin_originality::print_disclosure
+     */
     public function test_print_disclosure_returns_empty_when_disabled(): void {
         $this->resetAfterTest();
 
@@ -427,6 +542,11 @@ final class lib_test extends \advanced_testcase {
         $this->assertEquals('', $output);
     }
 
+    /**
+     * Test print_disclosure returns empty when the activity is disabled.
+     *
+     * @covers \plagiarism_plugin_originality::print_disclosure
+     */
     public function test_print_disclosure_returns_empty_when_activity_disabled(): void {
         $this->resetAfterTest();
 
@@ -444,6 +564,11 @@ final class lib_test extends \advanced_testcase {
 
     // Tests for plagiarism_originality_submit_text().
 
+    /**
+     * Test submit_text creates a record and queues a task.
+     *
+     * @covers ::plagiarism_originality_submit_text
+     */
     public function test_submit_text_creates_record_and_queues_task(): void {
         global $DB;
         $this->resetAfterTest();
@@ -474,6 +599,11 @@ final class lib_test extends \advanced_testcase {
         $this->assertNotEmpty($tasks);
     }
 
+    /**
+     * Test submit_text skips a duplicate submission.
+     *
+     * @covers ::plagiarism_originality_submit_text
+     */
     public function test_submit_text_skips_duplicate(): void {
         global $DB;
         $this->resetAfterTest();
@@ -507,6 +637,11 @@ final class lib_test extends \advanced_testcase {
         $this->assertEquals(1, $count);
     }
 
+    /**
+     * Test submit_text resubmits on error status.
+     *
+     * @covers ::plagiarism_originality_submit_text
+     */
     public function test_submit_text_resubmits_on_error_status(): void {
         global $DB;
         $this->resetAfterTest();
@@ -542,6 +677,11 @@ final class lib_test extends \advanced_testcase {
 
     // SUPPORTED_MODULES constant.
 
+    /**
+     * Test SUPPORTED_MODULES contains expected values.
+     *
+     * @covers \plagiarism_plugin_originality
+     */
     public function test_supported_modules_contains_expected_values(): void {
         $expected = ['assign', 'forum', 'workshop', 'quiz'];
         $this->assertEquals($expected, \plagiarism_plugin_originality::SUPPORTED_MODULES);
