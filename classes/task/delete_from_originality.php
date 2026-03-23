@@ -24,8 +24,6 @@
 
 namespace plagiarism_originality\task;
 
-defined('MOODLE_INTERNAL') || die();
-
 /**
  * Adhoc task: delete a document from the external Originality service.
  *
@@ -35,7 +33,6 @@ defined('MOODLE_INTERNAL') || die();
  *   - attempt:     int     (current attempt number, starts at 1)
  */
 class delete_from_originality extends \core\task\adhoc_task {
-
     /** @var int Maximum number of retry attempts. */
     private const MAX_ATTEMPTS = 5;
 
@@ -69,14 +66,13 @@ class delete_from_originality extends \core\task\adhoc_task {
             }
 
             mtrace("Originality delete task: document {$externalid} deleted on attempt {$attempt}.");
-
         } catch (\Exception $e) {
             if ($attempt >= self::MAX_ATTEMPTS) {
                 // Give up — mark the record as delete_failed so admin can retry.
                 if ($recordid > 0 && $DB->record_exists('plagiarism_originality_files', ['id' => $recordid])) {
                     $update = new \stdClass();
                     $update->id = $recordid;
-                    $update->status = 4; // delete_failed.
+                    $update->status = 4; // Delete_failed.
                     $update->errorresponse = $e->getMessage();
                     $update->timemodified = time();
                     $DB->update_record('plagiarism_originality_files', $update);

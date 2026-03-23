@@ -24,7 +24,7 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-$capabilities = array(
+$capabilities = [
     // Whether the user can manage.
     'plagiarism/originality:manage' => [
         'captype' => 'write',

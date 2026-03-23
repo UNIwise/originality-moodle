@@ -30,7 +30,6 @@ require_once($CFG->dirroot . '/lib/formslib.php');
  * Settings form for plagiarism_originality.
  */
 class plagiarism_setup_form extends moodleform {
-
     /**
      * Define the form elements.
      */
@@ -119,4 +118,3 @@ class plagiarism_setup_form extends moodleform {
         $this->add_action_buttons(true);
     }
 }
-

@@ -24,13 +24,10 @@
 
 namespace plagiarism_originality\task;
 
-defined('MOODLE_INTERNAL') || die();
-
 /**
  * Scheduled task to poll the external service for submission results.
  */
 class submit_files extends \core\task\scheduled_task {
-
     /**
      * Return the name of the task.
      *

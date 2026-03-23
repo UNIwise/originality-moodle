@@ -26,13 +26,10 @@
 
 namespace plagiarism_originality;
 
-defined('MOODLE_INTERNAL') || die();
-
 /**
  * Client for communicating with the external plagiarism checking service.
  */
 class api_client {
-
     /** @var string Base URL of the external API. */
     private string $apiurl;
 

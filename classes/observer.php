@@ -27,13 +27,10 @@
 
 namespace plagiarism_originality;
 
-defined('MOODLE_INTERNAL') || die();
-
 /**
  * Observer class for plagiarism_originality events.
  */
 class observer {
-
     /**
      * Handle the assessable_uploaded event (file submissions).
      *
@@ -260,8 +257,14 @@ class observer {
         // Submit any file attachments.
         $fs = get_file_storage();
         $context = \context_module::instance($cmid);
-        $files = $fs->get_area_files($context->id, 'assignsubmission_file', 'submission_files',
-            $submission->id, 'id', false);
+        $files = $fs->get_area_files(
+            $context->id,
+            'assignsubmission_file',
+            'submission_files',
+            $submission->id,
+            'id',
+            false
+        );
 
         foreach ($files as $file) {
             if (!$file->is_directory()) {

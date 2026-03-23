@@ -24,8 +24,6 @@
 
 namespace plagiarism_originality\task;
 
-defined('MOODLE_INTERNAL') || die();
-
 /**
  * Adhoc task: submit a file or text to the external Originality service.
  *
@@ -34,7 +32,6 @@ defined('MOODLE_INTERNAL') || die();
  *   - attempt:   int  (current attempt number, starts at 1)
  */
 class submit_to_originality extends \core\task\adhoc_task {
-
     /** @var int Maximum number of retry attempts. */
     private const MAX_ATTEMPTS = 5;
 
@@ -85,10 +82,14 @@ class submit_to_originality extends \core\task\adhoc_task {
             }
 
             // Search for the file across all areas within this module context.
-            $files = $DB->get_records_select('files',
+            $files = $DB->get_records_select(
+                'files',
                 'contenthash = :hash AND contextid = :ctx AND filename != :dot',
                 ['hash' => $record->identifier, 'ctx' => $context->id, 'dot' => '.'],
-                '', '*', 0, 1
+                '',
+                '*',
+                0,
+                1
             );
 
             $filerecord = reset($files);
@@ -113,7 +114,6 @@ class submit_to_originality extends \core\task\adhoc_task {
             $DB->update_record('plagiarism_originality_files', $record);
 
             mtrace("Originality submit task: record {$recordid} submitted successfully on attempt {$attempt}.");
-
         } catch (\Exception $e) {
             $record->attempts = $attempt;
             $record->errorresponse = $e->getMessage();

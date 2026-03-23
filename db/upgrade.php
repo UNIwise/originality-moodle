@@ -15,9 +15,10 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * plagiarism_originality upgrade
+ * plagiarism_originality upgrade.
  *
  * @package    plagiarism_originality
+ * @copyright  2026 onwards
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
@@ -28,8 +29,7 @@
  * @param int $oldversion The old version of the plugin.
  * @return bool Returns true if the upgrade is successful, false otherwise.
  */
-function xmldb_plagiarism_originality_upgrade($oldversion)
-{
+function xmldb_plagiarism_originality_upgrade($oldversion) {
     global $DB;
 
     $dbman = $DB->get_manager();
@@ -71,8 +71,7 @@ function xmldb_plagiarism_originality_upgrade($oldversion)
     }
 
     if ($oldversion < 2026031201) {
-
-        // --- plagiarism_originality_settings: make cm unique ---
+        // Plagiarism_originality_settings: make cm unique.
         $table = new xmldb_table('plagiarism_originality_settings');
         // Drop the old non-unique foreign key on cm first.
         $key = new xmldb_key('cm', XMLDB_KEY_FOREIGN, ['cm'], 'course_modules', ['id']);
@@ -81,16 +80,16 @@ function xmldb_plagiarism_originality_upgrade($oldversion)
         $key = new xmldb_key('cm', XMLDB_KEY_FOREIGN_UNIQUE, ['cm'], 'course_modules', ['id']);
         $dbman->add_key($table, $key);
 
-        // --- plagiarism_originality_files: add missing fields ---
+        // Plagiarism_originality_files: add missing fields.
         $table = new xmldb_table('plagiarism_originality_files');
 
-        // identifier – Moodle file content hash.
+        // Identifier – Moodle file content hash.
         $field = new xmldb_field('identifier', XMLDB_TYPE_CHAR, '255', null, XMLDB_NOTNULL, null, '', 'userid');
         if (!$dbman->field_exists($table, $field)) {
             $dbman->add_field($table, $field);
         }
 
-        // filename – original filename for display.
+        // Filename – original filename for display.
         $field = new xmldb_field('filename', XMLDB_TYPE_CHAR, '255', null, null, null, null, 'identifier');
         if (!$dbman->field_exists($table, $field)) {
             $dbman->add_field($table, $field);
@@ -100,13 +99,13 @@ function xmldb_plagiarism_originality_upgrade($oldversion)
         $field = new xmldb_field('submissiontype', XMLDB_TYPE_CHAR, '20', null, null, null, null, 'filename');
         $dbman->change_field_type($table, $field);
 
-        // reporturl – URL to external report.
+        // Reporturl – URL to external report.
         $field = new xmldb_field('reporturl', XMLDB_TYPE_TEXT, null, null, null, null, null, 'externalid');
         if (!$dbman->field_exists($table, $field)) {
             $dbman->add_field($table, $field);
         }
 
-        // score – similarity percentage.
+        // Score – similarity percentage.
         $field = new xmldb_field('score', XMLDB_TYPE_INTEGER, '5', null, null, null, null, 'reporturl');
         if (!$dbman->field_exists($table, $field)) {
             $dbman->add_field($table, $field);
@@ -117,7 +116,7 @@ function xmldb_plagiarism_originality_upgrade($oldversion)
         $dbman->change_field_notnull($table, $field);
         $dbman->change_field_default($table, $field);
 
-        // errorresponse – error message from service.
+        // Errorresponse – error message from service.
         $field = new xmldb_field('errorresponse', XMLDB_TYPE_TEXT, null, null, null, null, null, 'attempts');
         if (!$dbman->field_exists($table, $field)) {
             $dbman->add_field($table, $field);

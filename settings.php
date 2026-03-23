@@ -37,11 +37,11 @@
     $plagiarismplugin = new plagiarism_plugin_originality();
     $settingspage = new moodle_url('/plagiarism/originality/settings.php');
 
-    if ($mform->is_cancelled()) {
-        redirect(new moodle_url('/admin/category.php', ['category' => 'plagiarism']));
-    }
+if ($mform->is_cancelled()) {
+    redirect(new moodle_url('/admin/category.php', ['category' => 'plagiarism']));
+}
 
-    echo $OUTPUT->header();
+echo $OUTPUT->header();
 
     // Tab navigation.
     $settingsurl = new moodle_url('/plagiarism/originality/settings.php');
