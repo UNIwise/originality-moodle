@@ -40,8 +40,8 @@ $PAGE->set_url($pageurl);
 
 // Handle retry actions.
 $retryid = optional_param('retryid', 0, PARAM_INT);
-$retryaction = optional_param('retryaction', '', PARAM_ALPHA); // 'submit' or 'delete'.
-$retryall = optional_param('retryall', '', PARAM_ALPHA); // 'submit' or 'delete'.
+$retryaction = optional_param('retryaction', '', PARAM_ALPHA); // Accepts 'submit' or 'delete'.
+$retryall = optional_param('retryall', '', PARAM_ALPHA); // Accepts 'submit' or 'delete'.
 
 if ($retryid && $retryaction && confirm_sesskey()) {
     $record = $DB->get_record('plagiarism_originality_files', ['id' => $retryid]);
@@ -136,7 +136,7 @@ $ssearch = optional_param('ssearch', '', PARAM_RAW); // Submissions search.
 $dsearch = optional_param('dsearch', '', PARAM_RAW); // Deletions search.
 
 // Build WHERE clause for search.
-$buildwhere = function(int $status, string $search) use ($DB) {
+$buildwhere = function (int $status, string $search) use ($DB) {
     $params = ['status' => $status];
     $where = 'status = :status';
     $search = trim($search);
@@ -157,7 +157,7 @@ $buildwhere = function(int $status, string $search) use ($DB) {
     return [$where, $params];
 };
 
-// --- Failed Submissions ---
+// Failed Submissions.
 echo $OUTPUT->heading(get_string('failedsubmissions', 'plagiarism_originality'), 3);
 
 // Search form.
@@ -177,19 +177,32 @@ echo ' ' . html_writer::empty_tag('input', [
 ]);
 if ($ssearch !== '') {
     $clearurl = new moodle_url($pageurl, ['dpage' => $dpage, 'dsearch' => $dsearch]);
-    echo ' ' . html_writer::link($clearurl, get_string('clear', 'plagiarism_originality'),
-        ['class' => 'btn btn-link']);
+    echo ' ' . html_writer::link(
+        $clearurl,
+        get_string('clear', 'plagiarism_originality'),
+        ['class' => 'btn btn-link']
+    );
 }
 echo '</form>';
 
-list($swhere, $sparams) = $buildwhere(3, $ssearch);
+[$swhere, $sparams] = $buildwhere(3, $ssearch);
 $submitcount = $DB->count_records_select('plagiarism_originality_files', $swhere, $sparams);
-$failedsubmits = $DB->get_records_select('plagiarism_originality_files', $swhere, $sparams,
-    'timemodified DESC', '*', $spage * $perpage, $perpage);
+$failedsubmits = $DB->get_records_select(
+    'plagiarism_originality_files',
+    $swhere,
+    $sparams,
+    'timemodified DESC',
+    '*',
+    $spage * $perpage,
+    $perpage
+);
 
 if ($submitcount == 0) {
-    echo html_writer::tag('p', get_string('nofailedsubmissions', 'plagiarism_originality'),
-        ['class' => 'text-muted']);
+    echo html_writer::tag(
+        'p',
+        get_string('nofailedsubmissions', 'plagiarism_originality'),
+        ['class' => 'text-muted']
+    );
 } else {
     // Batch-fetch all users and course modules for this page.
     $suserids = array_unique(array_column($failedsubmits, 'userid'));
@@ -197,16 +210,21 @@ if ($submitcount == 0) {
 
     $susers = [];
     if (!empty($suserids)) {
-        list($insql, $inparams) = $DB->get_in_or_equal($suserids, SQL_PARAMS_NAMED);
-        $susers = $DB->get_records_select('user', "id $insql", $inparams, '',
-            'id, firstname, lastname, firstnamephonetic, lastnamephonetic, middlename, alternatename, email');
+        [$insql, $inparams] = $DB->get_in_or_equal($suserids, SQL_PARAMS_NAMED);
+        $susers = $DB->get_records_select(
+            'user',
+            "id $insql",
+            $inparams,
+            '',
+            'id, firstname, lastname, firstnamephonetic, lastnamephonetic, middlename, alternatename, email'
+        );
     }
 
     // Pre-resolve activity names, grouped by course to minimise get_fast_modinfo calls.
     $sactivitynames = [];
     $scms = [];
     if (!empty($scmids)) {
-        list($insql, $inparams) = $DB->get_in_or_equal($scmids, SQL_PARAMS_NAMED);
+        [$insql, $inparams] = $DB->get_in_or_equal($scmids, SQL_PARAMS_NAMED);
         $scms = $DB->get_records_select('course_modules', "id $insql", $inparams);
     }
     $coursegroups = [];
@@ -233,8 +251,11 @@ if ($submitcount == 0) {
 
     // Retry all button.
     $retryallurl = new moodle_url($pageurl, ['retryall' => 'submit', 'sesskey' => sesskey()]);
-    echo html_writer::link($retryallurl, get_string('retryall', 'plagiarism_originality'),
-        ['class' => 'btn btn-secondary mb-2']);
+    echo html_writer::link(
+        $retryallurl,
+        get_string('retryall', 'plagiarism_originality'),
+        ['class' => 'btn btn-secondary mb-2']
+    );
 
     $table = new html_table();
     $table->head = [
@@ -260,8 +281,11 @@ if ($submitcount == 0) {
             'retryaction' => 'submit',
             'sesskey' => sesskey(),
         ]);
-        $retrybtn = html_writer::link($retryurl, get_string('retry', 'plagiarism_originality'),
-            ['class' => 'btn btn-sm btn-primary']);
+        $retrybtn = html_writer::link(
+            $retryurl,
+            get_string('retry', 'plagiarism_originality'),
+            ['class' => 'btn btn-sm btn-primary']
+        );
 
         $table->data[] = [
             $record->id,
@@ -269,8 +293,11 @@ if ($submitcount == 0) {
             $username,
             $activityname,
             $record->attempts,
-            html_writer::tag('span', s(shorten_text($record->errorresponse ?? '', 200)),
-                ['class' => 'text-danger small']),
+            html_writer::tag(
+                'span',
+                s(shorten_text($record->errorresponse ?? '', 200)),
+                ['class' => 'text-danger small']
+            ),
             userdate($record->timemodified),
             $retrybtn,
         ];
@@ -283,7 +310,7 @@ if ($submitcount == 0) {
     echo $OUTPUT->paging_bar($submitcount, $spage, $perpage, $spagingurl, 'spage');
 }
 
-// --- Failed Deletions ---
+// Failed Deletions.
 echo $OUTPUT->heading(get_string('faileddeletions', 'plagiarism_originality'), 3);
 
 // Search form.
@@ -303,19 +330,32 @@ echo ' ' . html_writer::empty_tag('input', [
 ]);
 if ($dsearch !== '') {
     $clearurl = new moodle_url($pageurl, ['spage' => $spage, 'ssearch' => $ssearch]);
-    echo ' ' . html_writer::link($clearurl, get_string('clear', 'plagiarism_originality'),
-        ['class' => 'btn btn-link']);
+    echo ' ' . html_writer::link(
+        $clearurl,
+        get_string('clear', 'plagiarism_originality'),
+        ['class' => 'btn btn-link']
+    );
 }
 echo '</form>';
 
-list($dwhere, $dparams) = $buildwhere(4, $dsearch);
+[$dwhere, $dparams] = $buildwhere(4, $dsearch);
 $deletecount = $DB->count_records_select('plagiarism_originality_files', $dwhere, $dparams);
-$faileddeletes = $DB->get_records_select('plagiarism_originality_files', $dwhere, $dparams,
-    'timemodified DESC', '*', $dpage * $perpage, $perpage);
+$faileddeletes = $DB->get_records_select(
+    'plagiarism_originality_files',
+    $dwhere,
+    $dparams,
+    'timemodified DESC',
+    '*',
+    $dpage * $perpage,
+    $perpage
+);
 
 if ($deletecount == 0) {
-    echo html_writer::tag('p', get_string('nofaileddeletions', 'plagiarism_originality'),
-        ['class' => 'text-muted']);
+    echo html_writer::tag(
+        'p',
+        get_string('nofaileddeletions', 'plagiarism_originality'),
+        ['class' => 'text-muted']
+    );
 } else {
     // Batch-fetch all users and course modules for this page.
     $duserids = array_unique(array_column($faileddeletes, 'userid'));
@@ -323,15 +363,20 @@ if ($deletecount == 0) {
 
     $dusers = [];
     if (!empty($duserids)) {
-        list($insql, $inparams) = $DB->get_in_or_equal($duserids, SQL_PARAMS_NAMED);
-        $dusers = $DB->get_records_select('user', "id $insql", $inparams, '',
-            'id, firstname, lastname, firstnamephonetic, lastnamephonetic, middlename, alternatename, email');
+        [$insql, $inparams] = $DB->get_in_or_equal($duserids, SQL_PARAMS_NAMED);
+        $dusers = $DB->get_records_select(
+            'user',
+            "id $insql",
+            $inparams,
+            '',
+            'id, firstname, lastname, firstnamephonetic, lastnamephonetic, middlename, alternatename, email'
+        );
     }
 
     $dactivitynames = [];
     $dcms = [];
     if (!empty($dcmids)) {
-        list($insql, $inparams) = $DB->get_in_or_equal($dcmids, SQL_PARAMS_NAMED);
+        [$insql, $inparams] = $DB->get_in_or_equal($dcmids, SQL_PARAMS_NAMED);
         $dcms = $DB->get_records_select('course_modules', "id $insql", $inparams);
     }
     $coursegroups = [];
@@ -358,8 +403,11 @@ if ($deletecount == 0) {
 
     // Retry all button.
     $retryallurl = new moodle_url($pageurl, ['retryall' => 'delete', 'sesskey' => sesskey()]);
-    echo html_writer::link($retryallurl, get_string('retryall', 'plagiarism_originality'),
-        ['class' => 'btn btn-secondary mb-2']);
+    echo html_writer::link(
+        $retryallurl,
+        get_string('retryall', 'plagiarism_originality'),
+        ['class' => 'btn btn-secondary mb-2']
+    );
 
     $table = new html_table();
     $table->head = [
@@ -386,8 +434,11 @@ if ($deletecount == 0) {
             'retryaction' => 'delete',
             'sesskey' => sesskey(),
         ]);
-        $retrybtn = html_writer::link($retryurl, get_string('retry', 'plagiarism_originality'),
-            ['class' => 'btn btn-sm btn-primary']);
+        $retrybtn = html_writer::link(
+            $retryurl,
+            get_string('retry', 'plagiarism_originality'),
+            ['class' => 'btn btn-sm btn-primary']
+        );
 
         $table->data[] = [
             $record->id,
@@ -396,8 +447,11 @@ if ($deletecount == 0) {
             $activityname,
             s($record->externalid ?? ''),
             $record->attempts,
-            html_writer::tag('span', s(shorten_text($record->errorresponse ?? '', 200)),
-                ['class' => 'text-danger small']),
+            html_writer::tag(
+                'span',
+                s(shorten_text($record->errorresponse ?? '', 200)),
+                ['class' => 'text-danger small']
+            ),
             userdate($record->timemodified),
             $retrybtn,
         ];

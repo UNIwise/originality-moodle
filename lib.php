@@ -1,5 +1,4 @@
 <?php
-
 // This file is part of Moodle - http://moodle.org/
 //
 // Moodle is free software: you can redistribute it and/or modify
@@ -23,9 +22,7 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-if (!defined('MOODLE_INTERNAL')) {
-    die('Direct access to this script is forbidden.');    ///  It must be included from a Moodle page
-}
+defined('MOODLE_INTERNAL') || die();
 
 global $CFG;
 require_once($CFG->dirroot . '/plagiarism/lib.php');
@@ -33,18 +30,16 @@ require_once($CFG->dirroot . '/plagiarism/lib.php');
 /**
  * Plagiarism plugin class for the Wiseflow Originality service.
  */
-class plagiarism_plugin_originality extends plagiarism_plugin
-{
+class plagiarism_plugin_originality extends plagiarism_plugin {
     /** @var array Static cache of search results keyed by cmid. */
     private static $searchcache = [];
     /**
-     * hook to allow plagiarism specific information to be displayed beside a submission 
-     * @param array  $linkarraycontains all relevant information for the plugin to generate a link
+     * Hook to allow plagiarism specific information to be displayed beside a submission.
+     *
+     * @param array $linkarray Contains all relevant information for the plugin to generate a link.
      * @return string
-     * 
      */
-    public function get_links($linkarray)
-    {
+    public function get_links($linkarray) {
         global $DB;
 
         $cmid = $linkarray['cmid'];
@@ -215,11 +210,12 @@ class plagiarism_plugin_originality extends plagiarism_plugin
         return $output;
     }
 
-    /* hook to save plagiarism specific settings on a module settings page
-     * @param object $data - data from an mform submission.
-    */
-    public function save_form_elements($data)
-    {
+    /**
+     * Hook to save plagiarism specific settings on a module settings page.
+     *
+     * @param object $data Data from an mform submission.
+     */
+    public function save_form_elements($data) {
         global $DB;
         if (!isset($data->coursemodule)) {
             return;
@@ -249,8 +245,7 @@ class plagiarism_plugin_originality extends plagiarism_plugin
      * @param object $mform  - Moodle form
      * @param object $context - current context
      */
-    public function get_form_elements_module($mform, $context, $modulename = '')
-    {
+    public function get_form_elements_module($mform, $context, $modulename = '') {
         global $DB;
 
         $plagiarismsettings = (array) get_config('plagiarism_originality');
@@ -270,7 +265,11 @@ class plagiarism_plugin_originality extends plagiarism_plugin
 
         // Only show student report option if it is enabled globally.
         if (!empty($plagiarismsettings['originality_student_report'])) {
-            $mform->addElement('checkbox', 'originality_student_report', get_string('allow_student_report_activity', 'plagiarism_originality'));
+            $mform->addElement(
+                'checkbox',
+                'originality_student_report',
+                get_string('allow_student_report_activity', 'plagiarism_originality')
+            );
             $mform->addHelpButton('originality_student_report', 'allow_student_report_activity', 'plagiarism_originality');
             $mform->disabledIf('originality_student_report', 'originality_enabled');
         }
@@ -301,8 +300,7 @@ class plagiarism_plugin_originality extends plagiarism_plugin
      * @param int $cmid - course module id
      * @return string
      */
-    public function print_disclosure($cmid)
-    {
+    public function print_disclosure($cmid) {
         global $DB, $OUTPUT;
 
         $plagiarismsettings = (array) get_config('plagiarism_originality');
@@ -409,7 +407,6 @@ class plagiarism_plugin_originality extends plagiarism_plugin
                  WHERE cm.id = :cmid";
         return $DB->get_field_sql($sql, ['cmid' => $cmid]) ?: '';
     }
-
 }
 
 /**
@@ -419,8 +416,7 @@ class plagiarism_plugin_originality extends plagiarism_plugin
  * @param int $cmid The course module ID.
  * @param int $userid The user who submitted the file.
  */
-function plagiarism_originality_submit_file(\stored_file $file, int $cmid, int $userid): void
-{
+function plagiarism_originality_submit_file(\stored_file $file, int $cmid, int $userid): void {
     global $DB;
 
     $identifier = $file->get_contenthash();
@@ -471,8 +467,7 @@ function plagiarism_originality_submit_file(\stored_file $file, int $cmid, int $
  * @param int $cmid The course module ID.
  * @param int $userid The user who submitted the content.
  */
-function plagiarism_originality_submit_text(string $content, int $cmid, int $userid): void
-{
+function plagiarism_originality_submit_text(string $content, int $cmid, int $userid): void {
     global $DB;
 
     $identifier = sha1($content);
@@ -520,8 +515,7 @@ function plagiarism_originality_submit_text(string $content, int $cmid, int $use
  * @param moodleform_mod $formwrapper The form wrapper.
  * @param MoodleQuickForm $mform The form.
  */
-function plagiarism_originality_coursemodule_standard_elements($formwrapper, $mform)
-{
+function plagiarism_originality_coursemodule_standard_elements($formwrapper, $mform) {
     $plugin = new plagiarism_plugin_originality();
     $context = $formwrapper->get_context();
     $plugin->get_form_elements_module($mform, $context, $formwrapper->get_current()->modulename ?? '');
@@ -535,8 +529,7 @@ function plagiarism_originality_coursemodule_standard_elements($formwrapper, $mf
  * @param stdClass $course The course object.
  * @return stdClass The (possibly modified) data.
  */
-function plagiarism_originality_coursemodule_edit_post_actions($data, $course)
-{
+function plagiarism_originality_coursemodule_edit_post_actions($data, $course) {
     $plugin = new plagiarism_plugin_originality();
     $plugin->save_form_elements($data);
     return $data;

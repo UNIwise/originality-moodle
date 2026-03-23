@@ -35,10 +35,11 @@ require_once($CFG->dirroot . '/mod/assign/locallib.php');
 
 /**
  * Tests for the observer class.
+ *
+ * @covers \plagiarism_originality\observer
  */
 #[\PHPUnit\Framework\Attributes\CoversClass(\plagiarism_originality\observer::class)]
 final class observer_test extends \advanced_testcase {
-
     /**
      * Helper: enable the plugin globally with assign module support.
      */
@@ -96,9 +97,7 @@ final class observer_test extends \advanced_testcase {
         $assignobj->submit_for_grading($data, []);
     }
 
-    // ---------------------------------------------------------------
-    // Event gating tests (no real submissions needed)
-    // ---------------------------------------------------------------
+    // Event gating tests (no real submissions needed).
 
     public function test_observer_does_nothing_when_plugin_disabled(): void {
         global $DB;
@@ -210,7 +209,7 @@ final class observer_test extends \advanced_testcase {
             'submissiondrafts' => 0,
         ]);
 
-        $this->set_activity_settings($assign->cmid, 1, 0, 0); // submit on upload.
+        $this->set_activity_settings($assign->cmid, 1, 0, 0); // Submit on upload.
 
         $content = 'This is an online text submission for plagiarism checking.';
 
@@ -228,9 +227,7 @@ final class observer_test extends \advanced_testcase {
         $this->assertEquals(0, (int) $record->status);
     }
 
-    // ---------------------------------------------------------------
-    // submission_removed
-    // ---------------------------------------------------------------
+    // Submission removed.
 
     public function test_submission_removed_queues_delete_tasks(): void {
         global $DB;

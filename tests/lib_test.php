@@ -31,10 +31,13 @@ require_once($CFG->dirroot . '/plagiarism/originality/lib.php');
 
 /**
  * Tests for the plagiarism_plugin_originality class and helper functions.
+ *
+ * @covers \plagiarism_plugin_originality
+ * @covers ::plagiarism_originality_submit_text
+ * @covers ::plagiarism_originality_submit_file
  */
 #[\PHPUnit\Framework\Attributes\CoversClass(\plagiarism_plugin_originality::class)]
 final class lib_test extends \advanced_testcase {
-
     /**
      * Helper: set or update the per-activity originality settings.
      *
@@ -57,9 +60,7 @@ final class lib_test extends \advanced_testcase {
         $plugin->save_form_elements($data);
     }
 
-    // ---------------------------------------------------------------
-    // is_module_supported()
-    // ---------------------------------------------------------------
+    // Tests for is_module_supported().
 
     public function test_is_module_supported_returns_true_for_enabled_module(): void {
         $this->resetAfterTest();
@@ -120,9 +121,7 @@ final class lib_test extends \advanced_testcase {
         }
     }
 
-    // ---------------------------------------------------------------
-    // save_form_elements()
-    // ---------------------------------------------------------------
+    // Tests for save_form_elements().
 
     public function test_save_form_elements_inserts_new_record(): void {
         global $DB;
@@ -196,9 +195,7 @@ final class lib_test extends \advanced_testcase {
         $this->assertEquals($countbefore, $countafter);
     }
 
-    // ---------------------------------------------------------------
-    // can_user_view_report()
-    // ---------------------------------------------------------------
+    // Tests for can_user_view_report().
 
     public function test_can_user_view_report_teacher_always_allowed(): void {
         $this->resetAfterTest();
@@ -298,9 +295,7 @@ final class lib_test extends \advanced_testcase {
         );
     }
 
-    // ---------------------------------------------------------------
-    // get_module_name()
-    // ---------------------------------------------------------------
+    // Tests for get_module_name().
 
     public function test_get_module_name_returns_correct_name(): void {
         $this->resetAfterTest();
@@ -319,9 +314,7 @@ final class lib_test extends \advanced_testcase {
         $this->assertEquals('', $name);
     }
 
-    // ---------------------------------------------------------------
-    // get_links()
-    // ---------------------------------------------------------------
+    // Tests for get_links().
 
     public function test_get_links_returns_empty_when_plugin_disabled(): void {
         $this->resetAfterTest();
@@ -418,9 +411,7 @@ final class lib_test extends \advanced_testcase {
         $this->assertStringContainsString('45%', $output);
     }
 
-    // ---------------------------------------------------------------
-    // print_disclosure()
-    // ---------------------------------------------------------------
+    // Tests for print_disclosure().
 
     public function test_print_disclosure_returns_empty_when_disabled(): void {
         $this->resetAfterTest();
@@ -451,9 +442,7 @@ final class lib_test extends \advanced_testcase {
         $this->assertEquals('', $output);
     }
 
-    // ---------------------------------------------------------------
-    // plagiarism_originality_submit_text()
-    // ---------------------------------------------------------------
+    // Tests for plagiarism_originality_submit_text().
 
     public function test_submit_text_creates_record_and_queues_task(): void {
         global $DB;
@@ -551,9 +540,7 @@ final class lib_test extends \advanced_testcase {
         $this->assertEquals(0, (int) $record->status);
     }
 
-    // ---------------------------------------------------------------
-    // SUPPORTED_MODULES constant
-    // ---------------------------------------------------------------
+    // SUPPORTED_MODULES constant.
 
     public function test_supported_modules_contains_expected_values(): void {
         $expected = ['assign', 'forum', 'workshop', 'quiz'];

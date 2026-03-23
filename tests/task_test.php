@@ -31,15 +31,16 @@ require_once($CFG->dirroot . '/plagiarism/originality/lib.php');
 
 /**
  * Tests for the task classes.
+ *
+ * @covers \plagiarism_originality\task\submit_to_originality
+ * @covers \plagiarism_originality\task\delete_from_originality
+ * @covers \plagiarism_originality\task\submit_files
  */
 #[\PHPUnit\Framework\Attributes\CoversClass(\plagiarism_originality\task\submit_to_originality::class)]
 #[\PHPUnit\Framework\Attributes\CoversClass(\plagiarism_originality\task\delete_from_originality::class)]
 #[\PHPUnit\Framework\Attributes\CoversClass(\plagiarism_originality\task\submit_files::class)]
 final class task_test extends \advanced_testcase {
-
-    // ---------------------------------------------------------------
-    // submit_to_originality - record not found
-    // ---------------------------------------------------------------
+    // Submit to originality - record not found.
 
     public function test_submit_task_skips_missing_record(): void {
         $this->resetAfterTest();
@@ -158,9 +159,7 @@ final class task_test extends \advanced_testcase {
         $this->assertEquals(0, (int) $record->status);
     }
 
-    // ---------------------------------------------------------------
-    // delete_from_originality
-    // ---------------------------------------------------------------
+    // Delete from originality.
 
     public function test_delete_task_cleans_up_record_without_external_id(): void {
         global $DB;
@@ -197,9 +196,7 @@ final class task_test extends \advanced_testcase {
         $this->assertFalse($exists);
     }
 
-    // ---------------------------------------------------------------
-    // submit_files scheduled task - gating
-    // ---------------------------------------------------------------
+    // Submit files scheduled task - gating.
 
     public function test_submit_files_task_exits_when_plugin_disabled(): void {
         global $DB;

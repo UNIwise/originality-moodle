@@ -31,13 +31,12 @@ defined('MOODLE_INTERNAL') || die();
 
 /**
  * Tests for the api_client class.
+ *
+ * @covers \plagiarism_originality\api_client
  */
 #[\PHPUnit\Framework\Attributes\CoversClass(\plagiarism_originality\api_client::class)]
 final class api_client_test extends \advanced_testcase {
-
-    // ---------------------------------------------------------------
-    // Constructor / URL normalization
-    // ---------------------------------------------------------------
+    // Constructor / URL normalization.
 
     public function test_constructor_strips_trailing_slash(): void {
         $client = new api_client('https://api.example.com/', 'id', 'secret');
@@ -69,9 +68,7 @@ final class api_client_test extends \advanced_testcase {
         $this->assertEquals('https://api.example.com', $prop->getValue($client));
     }
 
-    // ---------------------------------------------------------------
-    // create() factory - missing config
-    // ---------------------------------------------------------------
+    // Factory create() - missing config.
 
     public function test_create_throws_when_api_url_missing(): void {
         $this->resetAfterTest();
@@ -117,9 +114,7 @@ final class api_client_test extends \advanced_testcase {
         $this->assertInstanceOf(api_client::class, $client);
     }
 
-    // ---------------------------------------------------------------
-    // get_access_token() - in-memory cache
-    // ---------------------------------------------------------------
+    // Get_access_token() - in-memory cache.
 
     public function test_get_access_token_returns_cached_inmemory_token(): void {
         $this->resetAfterTest();
@@ -128,13 +123,13 @@ final class api_client_test extends \advanced_testcase {
 
         // Inject a cached token via reflection.
         $reflection = new \ReflectionClass($client);
-        $tokenProp = $reflection->getProperty('accesstoken');
-        $tokenProp->setAccessible(true);
-        $tokenProp->setValue($client, 'cached_token_value');
+        $tokenprop = $reflection->getProperty('accesstoken');
+        $tokenprop->setAccessible(true);
+        $tokenprop->setValue($client, 'cached_token_value');
 
-        $expiryProp = $reflection->getProperty('tokenexpiry');
-        $expiryProp->setAccessible(true);
-        $expiryProp->setValue($client, time() + 3600);
+        $expiryprop = $reflection->getProperty('tokenexpiry');
+        $expiryprop->setAccessible(true);
+        $expiryprop->setValue($client, time() + 3600);
 
         // Should return the cached token without making any HTTP request.
         $token = $client->get_access_token();
@@ -168,9 +163,7 @@ final class api_client_test extends \advanced_testcase {
         $client->get_access_token();
     }
 
-    // ---------------------------------------------------------------
-    // extract_api_error() - tested via reflection
-    // ---------------------------------------------------------------
+    // Extract_api_error() - tested via reflection.
 
     public function test_extract_api_error_with_title_and_detail(): void {
         $client = new api_client('https://api.example.com', 'id', 'secret');
