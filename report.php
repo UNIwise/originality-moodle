@@ -25,7 +25,7 @@
 
 require_once(dirname(dirname(dirname(__FILE__))) . '/config.php');
 
-$id = required_param('id', PARAM_INT); // plagiarism_originality_files.id
+$id = required_param('id', PARAM_INT);
 
 require_login();
 

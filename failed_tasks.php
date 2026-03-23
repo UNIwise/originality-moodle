@@ -40,8 +40,8 @@ $PAGE->set_url($pageurl);
 
 // Handle retry actions.
 $retryid = optional_param('retryid', 0, PARAM_INT);
-$retryaction = optional_param('retryaction', '', PARAM_ALPHA); // Accepts 'submit' or 'delete'.
-$retryall = optional_param('retryall', '', PARAM_ALPHA); // Accepts 'submit' or 'delete'.
+$retryaction = optional_param('retryaction', '', PARAM_ALPHA);
+$retryall = optional_param('retryall', '', PARAM_ALPHA);
 
 if ($retryid && $retryaction && confirm_sesskey()) {
     $record = $DB->get_record('plagiarism_originality_files', ['id' => $retryid]);

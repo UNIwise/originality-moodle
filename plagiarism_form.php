@@ -24,7 +24,7 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-require_once($CFG->dirroot.'/lib/formslib.php');
+require_once($CFG->dirroot . '/lib/formslib.php');
 
 /**
  * Settings form for plagiarism_originality.
@@ -41,9 +41,14 @@ class plagiarism_setup_form extends moodleform {
         $mform->addElement('html', get_string('originalityexplain', 'plagiarism_originality'));
         $mform->addElement('checkbox', 'originality_use', get_string('useoriginality', 'plagiarism_originality'));
 
-        $mform->addElement('textarea', 'originality_student_disclosure', get_string('studentdisclosure','plagiarism_originality'),'wrap="virtual" rows="6" cols="50"');
+        $mform->addElement(
+            'textarea',
+            'originality_student_disclosure',
+            get_string('studentdisclosure', 'plagiarism_originality'),
+            'wrap="virtual" rows="6" cols="50"'
+        );
         $mform->addHelpButton('originality_student_disclosure', 'studentdisclosure', 'plagiarism_originality');
-        $mform->setDefault('originality_student_disclosure', get_string('studentdisclosuredefault','plagiarism_originality'));
+        $mform->setDefault('originality_student_disclosure', get_string('studentdisclosuredefault', 'plagiarism_originality'));
 
         // API connection settings.
         $mform->addElement('header', 'originality_api_header', get_string('apisettings', 'plagiarism_originality'));
@@ -61,7 +66,12 @@ class plagiarism_setup_form extends moodleform {
         $mform->addRule('originality_client_id', null, 'required', null, 'client');
         $mform->disabledIf('originality_client_id', 'originality_use');
 
-        $mform->addElement('passwordunmask', 'originality_client_secret', get_string('clientsecret', 'plagiarism_originality'), ['size' => 60]);
+        $mform->addElement(
+            'passwordunmask',
+            'originality_client_secret',
+            get_string('clientsecret', 'plagiarism_originality'),
+            ['size' => 60]
+        );
         $mform->setType('originality_client_secret', PARAM_RAW);
         $mform->addHelpButton('originality_client_secret', 'clientsecret', 'plagiarism_originality');
         $mform->addRule('originality_client_secret', null, 'required', null, 'client');

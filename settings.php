@@ -23,9 +23,9 @@
  */
 
     require_once(dirname(dirname(__FILE__)) . '/../config.php');
-    require_once($CFG->libdir.'/adminlib.php');
-    require_once($CFG->dirroot.'/plagiarism/originality/lib.php');
-    require_once($CFG->dirroot.'/plagiarism/originality/plagiarism_form.php');
+    require_once($CFG->libdir . '/adminlib.php');
+    require_once($CFG->dirroot . '/plagiarism/originality/lib.php');
+    require_once($CFG->dirroot . '/plagiarism/originality/plagiarism_form.php');
 
     require_login();
     admin_externalpage_setup('plagiarismoriginality');
@@ -38,7 +38,7 @@
     $settingspage = new moodle_url('/plagiarism/originality/settings.php');
 
     if ($mform->is_cancelled()) {
-        redirect(new moodle_url('/admin/category.php', array('category'=>'plagiarism')));
+        redirect(new moodle_url('/admin/category.php', ['category' => 'plagiarism']));
     }
 
     echo $OUTPUT->header();
@@ -76,9 +76,9 @@
         set_config('enabled', !empty($data->originality_use) ? 1 : 0, 'plagiarism_originality');
         echo $OUTPUT->notification(get_string('savedconfigsuccess', 'plagiarism_originality'), 'notifysuccess');
     }
-    $plagiarismsettings = (array)get_config('plagiarism_originality');
+    $plagiarismsettings = (array) get_config('plagiarism_originality');
     $mform->set_data($plagiarismsettings);
-    
+
     echo $OUTPUT->box_start('generalbox boxaligncenter', 'intro');
     $mform->display();
     echo $OUTPUT->box_end();
