@@ -104,21 +104,24 @@ class api_client {
 
         $tokenurl = $this->apiurl . '/v1/oauth/token';
 
+        $postfields = http_build_query([
+            'grant_type'    => 'client_credentials',
+            'client_id'     => $this->clientid,
+            'client_secret' => $this->clientsecret,
+        ]);
+
         $ch = curl_init();
         curl_setopt_array($ch, [
             CURLOPT_URL            => $tokenurl,
             CURLOPT_POST           => true,
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_POSTREDIR      => CURL_REDIR_POST_ALL,
             CURLOPT_HTTPHEADER     => [
                 'Content-Type: application/x-www-form-urlencoded',
                 'Accept: application/json',
             ],
-            CURLOPT_POSTFIELDS     => http_build_query([
-                'grant_type'    => 'client_credentials',
-                'client_id'     => $this->clientid,
-                'client_secret' => $this->clientsecret,
-            ]),
+            CURLOPT_POSTFIELDS     => $postfields,
         ]);
 
         $response = curl_exec($ch);
