@@ -110,13 +110,15 @@ class api_client {
             CURLOPT_POST           => true,
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_FOLLOWLOCATION => true,
-            CURLOPT_USERPWD        => $this->clientid . ':' . $this->clientsecret,
-            CURLOPT_HTTPAUTH       => CURLAUTH_BASIC,
             CURLOPT_HTTPHEADER     => [
                 'Content-Type: application/x-www-form-urlencoded',
                 'Accept: application/json',
             ],
-            CURLOPT_POSTFIELDS     => 'grant_type=client_credentials',
+            CURLOPT_POSTFIELDS     => http_build_query([
+                'grant_type'    => 'client_credentials',
+                'client_id'     => $this->clientid,
+                'client_secret' => $this->clientsecret,
+            ]),
         ]);
 
         $response = curl_exec($ch);
