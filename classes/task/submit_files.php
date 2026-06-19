@@ -59,6 +59,65 @@ class submit_files extends \core\task\scheduled_task {
 
         // Poll for results on submitted files (status = 1).
         $this->poll_submitted_results($DB, $client);
+
+        // Re-queue orphaned pending records that have no adhoc task waiting.
+        $this->requeue_orphaned_pending($DB);
+    }
+
+    /**
+     * Re-queue adhoc tasks for pending records (status = 0) that have been
+     * stuck for more than 5 minutes and have no queued adhoc task.
+     *
+     * @param \moodle_database $DB
+     */
+    private function requeue_orphaned_pending(\moodle_database $DB): void {
+        $cutoff = time() - 300; // At least 5 minutes old.
+
+        $records = $DB->get_records_select(
+            'plagiarism_originality_files',
+            "status = :status AND timemodified < :cutoff",
+            ['status' => 0, 'cutoff' => $cutoff],
+            'timemodified ASC',
+            '*',
+            0,
+            100
+        );
+
+        if (empty($records)) {
+            return;
+        }
+
+        // Get record IDs that already have a queued adhoc task to avoid duplicates.
+        $queued = $DB->get_records_select(
+            'task_adhoc',
+            "classname = :classname",
+            ['classname' => '\\plagiarism_originality\\task\\submit_to_originality'],
+            '',
+            'id, customdata'
+        );
+        $queuedids = [];
+        foreach ($queued as $task) {
+            $data = json_decode($task->customdata);
+            if (!empty($data->record_id)) {
+                $queuedids[(int) $data->record_id] = true;
+            }
+        }
+
+        foreach ($records as $record) {
+            if (isset($queuedids[(int) $record->id])) {
+                continue;
+            }
+
+            $attempt = ((int) ($record->attempts ?? 0)) + 1;
+            $task = new submit_to_originality();
+            $task->set_custom_data([
+                'record_id' => $record->id,
+                'attempt' => $attempt,
+            ]);
+            \core\task\manager::queue_adhoc_task($task);
+
+            mtrace("Originality: Re-queued orphaned record {$record->id} (attempt {$attempt}).");
+        }
     }
 
     /**

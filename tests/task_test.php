@@ -141,13 +141,18 @@ final class task_test extends \advanced_testcase {
     }
 
     /**
-     * Test that the submit task skips an onlinetext retry.
+     * Test that the submit task retries onlinetext when submission data is not found.
      *
      * @covers \plagiarism_originality\task\submit_to_originality::execute
      */
-    public function test_submit_task_skips_onlinetext_retry(): void {
+    public function test_submit_task_retries_onlinetext_when_submission_missing(): void {
         global $DB;
         $this->resetAfterTest();
+
+        set_config('originality_use', 1, 'plagiarism_originality');
+        set_config('originality_api_url', 'https://api.example.com', 'plagiarism_originality');
+        set_config('originality_client_id', 'testid', 'plagiarism_originality');
+        set_config('originality_client_secret', 'testsecret', 'plagiarism_originality');
 
         $course = $this->getDataGenerator()->create_course();
         $student = $this->getDataGenerator()->create_and_enrol($course, 'student');
@@ -168,15 +173,16 @@ final class task_test extends \advanced_testcase {
         $task = new task\submit_to_originality();
         $task->set_custom_data([
             'record_id' => $recordid,
-            'attempt' => 2,
+            'attempt' => 1,
         ]);
 
-        $this->expectOutputRegex('/onlinetext/');
+        $this->expectOutputRegex('/failed on attempt/');
         $task->execute();
 
-        // Record should remain status=0.
+        // Record should remain status=0 (will retry).
         $record = $DB->get_record('plagiarism_originality_files', ['id' => $recordid]);
         $this->assertEquals(0, (int) $record->status);
+        $this->assertEquals(1, (int) $record->attempts);
     }
 
     // Delete from originality.

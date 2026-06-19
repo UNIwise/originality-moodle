@@ -35,7 +35,7 @@ Installation
 
 1. Copy the `originality` folder into your Moodle installation at:
 
-       <moodle_root>/plagiarism/originality/
+       <moodle_root>/public/plagiarism/originality/
 
 2. Log in as a site administrator and visit the notifications page
    (Site administration > Notifications) to trigger the database upgrade.
