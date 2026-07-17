@@ -104,11 +104,9 @@ class api_client {
 
         $tokenurl = $this->apiurl . '/v1/oauth/token';
 
-        $postfields = http_build_query([
-            'grant_type'    => 'client_credentials',
-            'client_id'     => $this->clientid,
-            'client_secret' => $this->clientsecret,
-        ]);
+        $postfields = 'grant_type=client_credentials' .
+                      '&client_id=' . $this->clientid .
+                      '&client_secret=' . $this->clientsecret;
 
         $ch = curl_init();
         curl_setopt_array($ch, [
