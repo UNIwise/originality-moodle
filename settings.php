@@ -61,6 +61,7 @@ if (($data = $mform->get_data()) && confirm_sesskey()) {
         'originality_mod_workshop',
         'originality_mod_quiz',
         'originality_student_report',
+        'originality_index_documents',
     ];
     foreach ($checkboxes as $cb) {
         if (!isset($data->$cb)) {

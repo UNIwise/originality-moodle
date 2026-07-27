@@ -96,6 +96,14 @@ class plagiarism_setup_form extends moodleform {
         $mform->setDefault('originality_submit_on', 0);
         $mform->disabledIf('originality_submit_on', 'originality_use');
 
+        // Indexing settings.
+        $mform->addElement('header', 'originality_index_header', get_string('indexsettings', 'plagiarism_originality'));
+
+        $mform->addElement('checkbox', 'originality_index_documents', get_string('index_documents', 'plagiarism_originality'));
+        $mform->addHelpButton('originality_index_documents', 'index_documents', 'plagiarism_originality');
+        $mform->setDefault('originality_index_documents', 0);
+        $mform->disabledIf('originality_index_documents', 'originality_use');
+
         // Activity type settings.
         $mform->addElement('header', 'originality_mods_header', get_string('activitiessettings', 'plagiarism_originality'));
 

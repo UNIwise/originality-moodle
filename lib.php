@@ -224,11 +224,13 @@ class plagiarism_plugin_originality extends plagiarism_plugin {
         $enabled = isset($data->originality_enabled) ? (int) $data->originality_enabled : 0;
         $studentreport = isset($data->originality_student_report) ? (int) $data->originality_student_report : 0;
         $submiton = isset($data->originality_submit_on) ? (int) $data->originality_submit_on : 0;
+        $indexdocuments = isset($data->originality_index_documents) ? (int) $data->originality_index_documents : 0;
 
         if ($record = $DB->get_record('plagiarism_originality_settings', ['cm' => $cmid])) {
             $record->enabled = $enabled;
             $record->student_report = $studentreport;
             $record->submit_on = $submiton;
+            $record->index_documents = $indexdocuments;
             $DB->update_record('plagiarism_originality_settings', $record);
         } else {
             $record = new stdClass();
@@ -236,6 +238,7 @@ class plagiarism_plugin_originality extends plagiarism_plugin {
             $record->enabled = $enabled;
             $record->student_report = $studentreport;
             $record->submit_on = $submiton;
+            $record->index_documents = $indexdocuments;
             $DB->insert_record('plagiarism_originality_settings', $record);
         }
     }
@@ -284,6 +287,16 @@ class plagiarism_plugin_originality extends plagiarism_plugin {
         $mform->setDefault('originality_submit_on', (int) ($plagiarismsettings['originality_submit_on'] ?? 0));
         $mform->disabledIf('originality_submit_on', 'originality_enabled');
 
+        // Indexing (defaults to the global plugin setting, can be overridden per activity).
+        $mform->addElement(
+            'checkbox',
+            'originality_index_documents',
+            get_string('index_documents', 'plagiarism_originality')
+        );
+        $mform->addHelpButton('originality_index_documents', 'index_documents', 'plagiarism_originality');
+        $mform->setDefault('originality_index_documents', (int) ($plagiarismsettings['originality_index_documents'] ?? 0));
+        $mform->disabledIf('originality_index_documents', 'originality_enabled');
+
         if ($cmid && $record = $DB->get_record('plagiarism_originality_settings', ['cm' => $cmid])) {
             $mform->setDefault('originality_enabled', $record->enabled);
             if (isset($record->student_report)) {
@@ -291,6 +304,9 @@ class plagiarism_plugin_originality extends plagiarism_plugin {
             }
             if (isset($record->submit_on)) {
                 $mform->setDefault('originality_submit_on', $record->submit_on);
+            }
+            if (isset($record->index_documents)) {
+                $mform->setDefault('originality_index_documents', $record->index_documents);
             }
         }
     }

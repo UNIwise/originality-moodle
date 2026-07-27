@@ -186,5 +186,16 @@ function xmldb_plagiarism_originality_upgrade($oldversion) {
         upgrade_plugin_savepoint(true, 2026032003, 'plagiarism', 'originality');
     }
 
+    if ($oldversion < 2026072700) {
+        // Add index_documents field to plagiarism_originality_settings.
+        $table = new xmldb_table('plagiarism_originality_settings');
+        $field = new xmldb_field('index_documents', XMLDB_TYPE_INTEGER, '2', null, XMLDB_NOTNULL, null, '0', 'submit_on');
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+
+        upgrade_plugin_savepoint(true, 2026072700, 'plagiarism', 'originality');
+    }
+
     return true;
 }

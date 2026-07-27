@@ -62,10 +62,12 @@ class submit_to_originality extends \core\task\adhoc_task {
         try {
             $client = \plagiarism_originality\api_client::create();
 
+            $index = $this->should_index((int) $record->cm);
+
             if ($record->submissiontype === 'onlinetext') {
-                $response = $this->submit_onlinetext($DB, $client, $record);
+                $response = $this->submit_onlinetext($DB, $client, $record, $index);
             } else {
-                $response = $this->submit_file_record($DB, $client, $record);
+                $response = $this->submit_file_record($DB, $client, $record, $index);
             }
 
             $record->externalid = (string) ($response['documentId'] ?? '');
@@ -105,15 +107,36 @@ class submit_to_originality extends \core\task\adhoc_task {
     }
 
     /**
+     * Determine whether documents for a course module should be indexed.
+     *
+     * Uses the per-activity setting when available, otherwise falls back to the
+     * global plugin default.
+     *
+     * @param int $cmid The course module ID.
+     * @return bool
+     */
+    private function should_index(int $cmid): bool {
+        global $DB;
+
+        $modsettings = $DB->get_record('plagiarism_originality_settings', ['cm' => $cmid]);
+        if ($modsettings !== false && isset($modsettings->index_documents)) {
+            return (bool) $modsettings->index_documents;
+        }
+
+        return (bool) get_config('plagiarism_originality', 'originality_index_documents');
+    }
+
+    /**
      * Submit a file record to the external service.
      *
      * @param \moodle_database $DB
      * @param \plagiarism_originality\api_client $client
      * @param object $record The plagiarism_originality_files record.
+     * @param bool $index Whether the document should be indexed by the service.
      * @return array The API response.
      * @throws \moodle_exception If the file cannot be found or submitted.
      */
-    private function submit_file_record(\moodle_database $DB, \plagiarism_originality\api_client $client, object $record): array {
+    private function submit_file_record(\moodle_database $DB, \plagiarism_originality\api_client $client, object $record, bool $index = false): array {
         $fs = get_file_storage();
         $cm = get_coursemodule_from_id('', (int) $record->cm);
         if (!$cm) {
@@ -149,7 +172,7 @@ class submit_to_originality extends \core\task\adhoc_task {
                 "File not valid for record {$record->id}.");
         }
 
-        return $client->submit_file($file, (int) $record->cm, (int) $record->userid);
+        return $client->submit_file($file, (int) $record->cm, (int) $record->userid, $index);
     }
 
     /**
@@ -158,10 +181,11 @@ class submit_to_originality extends \core\task\adhoc_task {
      * @param \moodle_database $DB
      * @param \plagiarism_originality\api_client $client
      * @param object $record The plagiarism_originality_files record.
+     * @param bool $index Whether the document should be indexed by the service.
      * @return array The API response.
      * @throws \moodle_exception If the text content cannot be found or submitted.
      */
-    private function submit_onlinetext(\moodle_database $DB, \plagiarism_originality\api_client $client, object $record): array {
+    private function submit_onlinetext(\moodle_database $DB, \plagiarism_originality\api_client $client, object $record, bool $index = false): array {
         $cm = get_coursemodule_from_id('', (int) $record->cm);
         if (!$cm) {
             throw new \moodle_exception('apierror', 'plagiarism_originality', '',
@@ -195,6 +219,6 @@ class submit_to_originality extends \core\task\adhoc_task {
                 "Online text content hash mismatch for record {$record->id}.");
         }
 
-        return $client->submit_text($onlinetext->onlinetext, (int) $record->cm, (int) $record->userid);
+        return $client->submit_text($onlinetext->onlinetext, (int) $record->cm, (int) $record->userid, $index);
     }
 }

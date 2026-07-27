@@ -154,10 +154,11 @@ class api_client {
      * @param \stored_file $file The Moodle stored file to submit.
      * @param int $cmid The course module ID for context.
      * @param int $userid The user who submitted the file.
+     * @param bool $index Whether the document should be indexed by the service.
      * @return array The decoded JSON response from the service, expected to contain at least 'id'.
      * @throws \moodle_exception On submission failure.
      */
-    public function submit_file(\stored_file $file, int $cmid, int $userid): array {
+    public function submit_file(\stored_file $file, int $cmid, int $userid, bool $index = false): array {
         $token = $this->get_access_token();
         $submiturl = $this->apiurl . '/v1/documents';
 
@@ -188,7 +189,7 @@ class api_client {
             ],
             CURLOPT_POSTFIELDS => [
                 'file'    => new \CURLFile($tmppath, $file->get_mimetype(), $file->get_filename()),
-                'index'   => 'false',
+                'index'   => $index ? 'true' : 'false',
                 'analyze' => 'true',
                 'context' => $context,
             ],
@@ -221,10 +222,11 @@ class api_client {
      * @param string $content The text content to check.
      * @param int $cmid The course module ID.
      * @param int $userid The user who submitted the content.
+     * @param bool $index Whether the document should be indexed by the service.
      * @return array The decoded JSON response.
      * @throws \moodle_exception On submission failure.
      */
-    public function submit_text(string $content, int $cmid, int $userid): array {
+    public function submit_text(string $content, int $cmid, int $userid, bool $index = false): array {
         $token = $this->get_access_token();
         $submiturl = $this->apiurl . '/v1/documents';
 
@@ -253,7 +255,7 @@ class api_client {
             ],
             CURLOPT_POSTFIELDS => [
                 'file'    => new \CURLFile($tmppath, 'text/plain', 'onlinetext.txt'),
-                'index'   => 'false',
+                'index'   => $index ? 'true' : 'false',
                 'analyze' => 'true',
                 'context' => $context,
             ],

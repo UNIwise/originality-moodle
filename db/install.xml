@@ -12,6 +12,7 @@
             <FIELD NAME="enabled" TYPE="int" LENGTH="2" NOTNULL="false" DEFAULT="0" SEQUENCE="false" />
             <FIELD NAME="student_report" TYPE="int" LENGTH="2" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Whether students can view the report for this activity" />
             <FIELD NAME="submit_on" TYPE="int" LENGTH="2" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="0=on upload, 1=on marking" />
+            <FIELD NAME="index_documents" TYPE="int" LENGTH="2" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Whether documents should be indexed by the service" />
         </FIELDS>
         <KEYS>
             <KEY NAME="primary" TYPE="primary" FIELDS="id" />
