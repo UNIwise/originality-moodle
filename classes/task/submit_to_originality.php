@@ -136,17 +136,30 @@ class submit_to_originality extends \core\task\adhoc_task {
      * @return array The API response.
      * @throws \moodle_exception If the file cannot be found or submitted.
      */
-    private function submit_file_record(\moodle_database $DB, \plagiarism_originality\api_client $client, object $record, bool $index = false): array {
+    private function submit_file_record(
+        \moodle_database $DB,
+        \plagiarism_originality\api_client $client,
+        object $record,
+        bool $index = false
+    ): array {
         $fs = get_file_storage();
         $cm = get_coursemodule_from_id('', (int) $record->cm);
         if (!$cm) {
-            throw new \moodle_exception('apierror', 'plagiarism_originality', '',
-                "Course module {$record->cm} not found for record {$record->id}.");
+            throw new \moodle_exception(
+                'apierror',
+                'plagiarism_originality',
+                '',
+                "Course module {$record->cm} not found for record {$record->id}."
+            );
         }
         $context = \context_module::instance($cm->id, IGNORE_MISSING);
         if (!$context) {
-            throw new \moodle_exception('apierror', 'plagiarism_originality', '',
-                "Context not found for cm {$record->cm}.");
+            throw new \moodle_exception(
+                'apierror',
+                'plagiarism_originality',
+                '',
+                "Context not found for cm {$record->cm}."
+            );
         }
 
         // Search for the file across all areas within this module context.
@@ -162,14 +175,22 @@ class submit_to_originality extends \core\task\adhoc_task {
 
         $filerecord = reset($files);
         if (!$filerecord) {
-            throw new \moodle_exception('apierror', 'plagiarism_originality', '',
-                "Cannot find file with hash {$record->identifier} for record {$record->id}.");
+            throw new \moodle_exception(
+                'apierror',
+                'plagiarism_originality',
+                '',
+                "Cannot find file with hash {$record->identifier} for record {$record->id}."
+            );
         }
 
         $file = $fs->get_file_by_id($filerecord->id);
         if (!$file || $file->is_directory()) {
-            throw new \moodle_exception('apierror', 'plagiarism_originality', '',
-                "File not valid for record {$record->id}.");
+            throw new \moodle_exception(
+                'apierror',
+                'plagiarism_originality',
+                '',
+                "File not valid for record {$record->id}."
+            );
         }
 
         return $client->submit_file($file, (int) $record->cm, (int) $record->userid, $index);
@@ -185,11 +206,20 @@ class submit_to_originality extends \core\task\adhoc_task {
      * @return array The API response.
      * @throws \moodle_exception If the text content cannot be found or submitted.
      */
-    private function submit_onlinetext(\moodle_database $DB, \plagiarism_originality\api_client $client, object $record, bool $index = false): array {
+    private function submit_onlinetext(
+        \moodle_database $DB,
+        \plagiarism_originality\api_client $client,
+        object $record,
+        bool $index = false
+    ): array {
         $cm = get_coursemodule_from_id('', (int) $record->cm);
         if (!$cm) {
-            throw new \moodle_exception('apierror', 'plagiarism_originality', '',
-                "Course module {$record->cm} not found for record {$record->id}.");
+            throw new \moodle_exception(
+                'apierror',
+                'plagiarism_originality',
+                '',
+                "Course module {$record->cm} not found for record {$record->id}."
+            );
         }
 
         // Retrieve the online text from the assignment submission.
@@ -199,8 +229,12 @@ class submit_to_originality extends \core\task\adhoc_task {
         ], '*', IGNORE_MULTIPLE);
 
         if (!$submission) {
-            throw new \moodle_exception('apierror', 'plagiarism_originality', '',
-                "Submission not found for user {$record->userid} in assignment {$cm->instance}.");
+            throw new \moodle_exception(
+                'apierror',
+                'plagiarism_originality',
+                '',
+                "Submission not found for user {$record->userid} in assignment {$cm->instance}."
+            );
         }
 
         $onlinetext = $DB->get_record('assignsubmission_onlinetext', [
@@ -209,14 +243,22 @@ class submit_to_originality extends \core\task\adhoc_task {
         ]);
 
         if (!$onlinetext || empty($onlinetext->onlinetext)) {
-            throw new \moodle_exception('apierror', 'plagiarism_originality', '',
-                "Online text not found for record {$record->id}.");
+            throw new \moodle_exception(
+                'apierror',
+                'plagiarism_originality',
+                '',
+                "Online text not found for record {$record->id}."
+            );
         }
 
         // Verify the content matches (identifier is sha1 of content).
         if (sha1($onlinetext->onlinetext) !== $record->identifier) {
-            throw new \moodle_exception('apierror', 'plagiarism_originality', '',
-                "Online text content hash mismatch for record {$record->id}.");
+            throw new \moodle_exception(
+                'apierror',
+                'plagiarism_originality',
+                '',
+                "Online text content hash mismatch for record {$record->id}."
+            );
         }
 
         return $client->submit_text($onlinetext->onlinetext, (int) $record->cm, (int) $record->userid, $index);
