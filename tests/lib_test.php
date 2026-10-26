@@ -519,6 +519,56 @@ final class lib_test extends \advanced_testcase {
 
         $this->assertStringContainsString('Complete', $output);
         $this->assertStringContainsString('45%', $output);
+        $this->assertStringNotContainsString('plagiarism-originality-report', $output);
+    }
+
+    /**
+     * Test get_links falls back to a report link for a completed local record that the API search did not return.
+     *
+     * @covers \plagiarism_plugin_originality::get_links
+     */
+    public function test_get_links_shows_report_link_from_local_record(): void {
+        global $DB;
+        $this->resetAfterTest();
+
+        $course = $this->getDataGenerator()->create_course();
+        $teacher = $this->getDataGenerator()->create_and_enrol($course, 'editingteacher');
+        $student = $this->getDataGenerator()->create_and_enrol($course, 'student');
+        $assign = $this->getDataGenerator()->create_module('assign', ['course' => $course->id]);
+
+        $this->set_activity_settings($assign->cmid, 1, 0, 0);
+
+        $content = 'Test online text submission';
+        $identifier = sha1($content);
+
+        $recordid = $DB->insert_record('plagiarism_originality_files', (object) [
+            'cm' => $assign->cmid,
+            'userid' => $student->id,
+            'identifier' => $identifier,
+            'filename' => 'onlinetext',
+            'submissiontype' => 'onlinetext',
+            'externalid' => '1234',
+            'status' => 2,
+            'score' => 45,
+            'attempts' => 1,
+            'timecreated' => time(),
+            'timemodified' => time(),
+        ]);
+
+        $this->setUser($teacher);
+
+        // No API is configured, so the search fails and get_links falls back to the local record.
+        $plugin = new \plagiarism_plugin_originality();
+        $output = $plugin->get_links([
+            'cmid' => $assign->cmid,
+            'userid' => $student->id,
+            'content' => $content,
+        ]);
+
+        $this->assertStringContainsString('plagiarism-originality-report', $output);
+        $this->assertStringContainsString('/plagiarism/originality/report.php?id=' . $recordid, $output);
+        $this->assertStringContainsString('Complete', $output);
+        $this->assertStringContainsString('45%', $output);
     }
 
     // Tests for print_disclosure().

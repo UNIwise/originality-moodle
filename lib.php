@@ -186,6 +186,15 @@ class plagiarism_plugin_originality extends plagiarism_plugin {
                     break;
                 case 2: // Complete.
                     $score = $filerecord->score ?? 0;
+                    // The report page fetches a fresh viewer link from the API, so link to it whenever we have a document.
+                    if (!empty($filerecord->externalid)) {
+                        $reporturl = new moodle_url('/plagiarism/originality/report.php', ['id' => $filerecord->id]);
+                        $output .= html_writer::link(
+                            $reporturl,
+                            get_string('viewreport', 'plagiarism_originality'),
+                            ['target' => '_blank', 'class' => 'plagiarism-originality-report']
+                        ) . html_writer::empty_tag('br');
+                    }
                     $output .= html_writer::tag(
                         'span',
                         get_string('status_complete', 'plagiarism_originality'),

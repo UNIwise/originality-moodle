@@ -282,19 +282,54 @@ class api_client {
         return $data;
     }
 
+    /** @var int Page size used when searching documents (API maximum). */
+    private const SEARCH_PAGE_SIZE = 2000;
+
+    /** @var int Safety cap on the number of search pages fetched per call. */
+    private const SEARCH_MAX_PAGES = 50;
+
     /**
      * Search documents by context filter (e.g. course module ID).
      *
-     * Returns all documents matching the given context key/value pair.
+     * Returns all documents matching the given context key/value pair, following
+     * the API's limit/offset pagination until no more pages are available.
      *
      * @param string $contextkey The context key to filter by (e.g. 'moodle_cm_id').
      * @param string $contextvalue The value to match.
-     * @return array The decoded JSON response (array of documents).
+     * @return array The decoded JSON response with all matching documents under 'documents'.
      * @throws \moodle_exception On request failure.
      */
     public function search_documents(string $contextkey, string $contextvalue): array {
+        $documents = [];
+        $offset = 0;
+
+        for ($page = 0; $page < self::SEARCH_MAX_PAGES; $page++) {
+            $data = $this->search_documents_page($contextkey, $contextvalue, self::SEARCH_PAGE_SIZE, $offset);
+            $documents = array_merge($documents, $data['documents'] ?? []);
+
+            if (empty($data['hasMore'])) {
+                break;
+            }
+            // The API filters some documents after paginating, so advance by the page size, not the count returned.
+            $offset += self::SEARCH_PAGE_SIZE;
+        }
+
+        return ['documents' => $documents, 'hasMore' => false];
+    }
+
+    /**
+     * Fetch a single page of document search results.
+     *
+     * @param string $contextkey The context key to filter by.
+     * @param string $contextvalue The value to match.
+     * @param int $limit Maximum number of documents to return.
+     * @param int $offset Number of documents to skip.
+     * @return array The decoded JSON response ('documents' and 'hasMore').
+     * @throws \moodle_exception On request failure.
+     */
+    private function search_documents_page(string $contextkey, string $contextvalue, int $limit, int $offset): array {
         $token = $this->get_access_token();
-        $searchurl = $this->apiurl . '/v1/documents/search';
+        $searchurl = $this->apiurl . '/v1/documents/search?limit=' . $limit . '&offset=' . $offset;
 
         $body = json_encode([
             'context' => [
